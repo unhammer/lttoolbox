@@ -273,6 +273,19 @@ public:
    * @param decalage offset to sum to the tags
    */
   void read(FILE *input, int const decalage = 0);
+
+  /**
+   * Converts the transducer to a prefix transducer
+   * @return the prefix transducer
+   */
+  Transducer convert();
+  
+  /**
+   * Intersects two finite-state transducers
+   * @param t the transducer with which this class is intersected
+   * @return the trimmed transducer
+   */
+  Transducer intersect(Transducer);
 };
 
 #endif
