@@ -796,6 +796,8 @@ Transducer::appendDotStar(Alphabet &my_a, Alphabet &t_a, Transducer t, int const
   return prefix_transducer;
 }
 
+
+
 Transducer
 Transducer::intersect(Transducer t)
 {

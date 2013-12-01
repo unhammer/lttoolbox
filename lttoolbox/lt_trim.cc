@@ -89,11 +89,17 @@ trim(FILE *file_a, FILE *file_b)
   Alphabet alph_b = alph_trans_b.first.first;
   std::map<wstring, Transducer> trans_b = alph_trans_b.second;
 
+  std::map<wstring, Transducer> prefix_transducers;
+  for(std::map<wstring, Transducer>::iterator it = trans_b.begin(); it != trans_b.end(); it++)
+  {
+    prefix_transducers[it->first]=it->second.appendDotStar(alph_a, alph_b, it->second);
+  }
   for(std::map<wstring, Transducer>::iterator it = trans_a.begin(); it != trans_a.end(); it++)
   {
     // it->second.intersect(alph_a, alph_b, trans_b);
   }
-  return alph_trans_a;
+  alph_trans_b.second = prefix_transducers;
+  return alph_trans_b;
 }
 
 
