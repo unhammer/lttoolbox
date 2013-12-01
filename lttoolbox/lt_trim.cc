@@ -92,7 +92,7 @@ trim(FILE *file_a, FILE *file_b)
   std::map<wstring, Transducer> prefix_transducers;
   for(std::map<wstring, Transducer>::iterator it = trans_b.begin(); it != trans_b.end(); it++)
   {
-    prefix_transducers[it->first]=it->second.appendDotStar(alph_a, alph_b, it->second);
+    prefix_transducers[it->first]=it->second.appendDotStar(alph_b, alph_b, it->second);
   }
   for(std::map<wstring, Transducer>::iterator it = trans_a.begin(); it != trans_a.end(); it++)
   {
