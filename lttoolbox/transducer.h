@@ -276,10 +276,11 @@ public:
 
   /**
    * Converts the transducer to a prefix transducer
+   * @param t the transducer with which this class is intersected
    * @return the prefix transducer
    */
-  Transducer convert();
-  
+  Transducer appendDotStar(Alphabet &my_a, Alphabet &t_a, Transducer t, int const epsilon_tag = 0);
+
   /**
    * Intersects two finite-state transducers
    * @param t the transducer with which this class is intersected
