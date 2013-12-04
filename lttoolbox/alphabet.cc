@@ -228,7 +228,7 @@ void Alphabet::setSymbol(int symbol, wstring newSymbolString) {
 }
 
 void
-Transducer::insertSymbolsIntoSet(set<int> &symbols, Tag t = kOutput)
+Alphabet::insertSymbolsIntoSet(set<int> &symbols, Tag t)
 {
   for(map<wstring, int, Ltstr>::iterator it = slexic.begin(),
                                          limit = slexic.end();
@@ -237,11 +237,11 @@ Transducer::insertSymbolsIntoSet(set<int> &symbols, Tag t = kOutput)
   {
     if(t == kOutput)
     {
-      symbols.insert(*this(this->decode(it->second).second, this->decode(it->second).second));
+      symbols.insert(this->operator()(this->decode(it->second).second, this->decode(it->second).second));
     }
-    else()
+    else
     {
-      symbols.insert(*this(this->decode(it->second).first, this->decode(it->second).first));
+      symbols.insert(this->operator()(this->decode(it->second).first, this->decode(it->second).first));
     }
   }
 }

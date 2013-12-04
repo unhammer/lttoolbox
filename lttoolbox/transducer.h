@@ -276,17 +276,18 @@ public:
 
   /**
    * Converts the transducer to a prefix transducer
-   * @param t the transducer with which this class is intersected
+   * @param alphabet_monolingual the alphabet of the monolingual dictionary, with which this transducer is converted into a prefix transducer
+   * @param epsilon_tag the tag to take as epsilon
    * @return the prefix transducer
    */
-  Transducer appendDotStar(Alphabet &my_a, Alphabet &t_a, Transducer t, int const epsilon_tag = 0);
+  Transducer appendDotStar(Alphabet alphabet_monolingual, const int epsilon_tag = 0);
 
   /**
    * Intersects two finite-state transducers
    * @param t the transducer with which this class is intersected
    * @return the trimmed transducer
    */
-  Transducer intersect(Transducer);
+  Transducer intersect(Transducer t, Alphabet a, Alphabet t_a, Alphabet trimmed_a);
 };
 
 #endif

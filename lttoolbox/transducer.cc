@@ -734,79 +734,52 @@ Transducer::recognise(wstring patro, Alphabet &a, FILE *err)
 }
 
 Transducer
-Transducer::appendDotStar(Alphabet a,
-  Alphabet t_a,
-  Alphabet &prefix_alphabet,
-  Transducer t,
-  int const epsilon_tag = 0)
+Transducer::appendDotStar(Alphabet alphabet_monolingual, const int epsilon_tag)
 {
-  // set of all of the input tags of the transducers
-  set<int> input_tags;
-  // struct to insert the input tags of the transducers
-  struct InsertInputTags
-  {
-    static void insertInputTags(Alphabet a, Transducer t, int const epsilon_tag, set<int> &input_tags)
-    {
-      for(map<int, multimap<int, int> >::iterator state_it = t.transitions.begin(),
-                                                  state_limit = t.transitions.end();
-        state_it != state_limit;
-        state_it++)
-      {
-        for(multimap<int, int>::iterator transition_it = state_it->second.begin(),
-                                         transition_limit = state_it->second.end();
-          transition_it != transition_limit;
-          transition_it++)
-        {
-          // check if the input tag is equal to the tag to take as epsilon
-          if(a.decode(transition_it->first).first == epsilon_tag)
-          {
-            continue;
-          }
-          else
-          {
-            // insert the input tag of the transition
-            input_tags.insert(a.decode(transition_it->first).first);
-          }
-        }
-      }
-    }
-  };
-
-  // insert the input tags of the transducers
-  InsertInputTags::insertInputTags(a, *this, epsilon_tag, input_tags);
-  InsertInputTags::insertInputTags(t_a, t, epsilon_tag, input_tags);
+  /* set of symbols, the input tags of which are set equal to the output tags
+   * of the alphabet
+   */
+  set<int> set_symbols;
+  // insert symbols from the alphabet of the monolingual dictionary
+  alphabet_monolingual.insertSymbolsIntoSet(set_symbols);
   // prefix transducer converted from the bilingual dictionary
   Transducer prefix_transducer(*this);
-  // TODO: include symbols in Alphabet prefix_alphabet
 
-  for(set<int>::iterator input_it = input_tags.begin(),
-                         input_limit = input_tags.end();
-    input_it != input_limit;
-    input_it++)
-  {
-    for(set<int>::iterator prefix_it = prefix_transducer.finals.begin(),
+  for(set<int>::iterator prefix_it = prefix_transducer.finals.begin(),
                            prefix_limit = prefix_transducer.finals.end();
       prefix_it != prefix_limit;
       prefix_it++)
+  {
+    for(set<int>::iterator set_it = set_symbols.begin(),
+                         set_limit = set_symbols.end();
+    set_it != set_limit;
+    set_it++)
     {
-      // link the final state to itself with the symbol
-      prefix_transducer.linkStates(*prefix_it, *prefix_it, prefix_alphabet(prefix_alphabet(*input_it), prefix_alphabet(*input_it)));
+      // check if the symbol is equal to the tag to take as epsilon
+      if(*set_it == epsilon_tag)
+      {
+        continue;
+      }
+      else
+      {
+        /* link the final state of the prefix transducer to itself with the
+         * symbol
+         */
+        prefix_transducer.linkStates(*prefix_it, *prefix_it, *set_it);
+      }
     }
   }
 
   return prefix_transducer;
 }
 
-// TODO
 Transducer
-Transducer::intersect(Transducer t)
+Transducer::intersect(Transducer t, Alphabet a, Alphabet t_a, Alphabet trimmed_a)
 {
   // map of the states of the multiplied and trimmed transducers
   map<pair<int, int>, int> states_multiplied_trimmed;
-
   // trimmed transducer
   Transducer trimmed_t;
-
   // destroy the initial state of the trimmed transducer
   trimmed_t.transitions.clear();
   
@@ -822,8 +795,9 @@ Transducer::intersect(Transducer t)
     {
       // state of the multiplied automaton
       pair<int, int> tmp(it->first, t_it->first);
-
-      // map the state of the multiplied automaton with a new state of the trimmed transducer
+      /* map the state of the multiplied automaton with a new state of the
+       * trimmed transducer
+       */
       states_multiplied_trimmed.insert(make_pair(tmp, trimmed_t.newState()));
     }
   }
@@ -848,16 +822,27 @@ Transducer::intersect(Transducer t)
           t_transition_it != t_transition_limit;
           t_transition_it++)
         {
-          if(transition_it->first == t_transition_it->first)
+          /* check if the input tag of this class is equal to the output tag of
+           * t
+           */
+          if(a.decode(transition_it->first).first
+            == t_a.decode(t_transition_it->first).second)
           {
             // source state of the multiplied automaton
-            pair<int, int> multiplied_source(state_it->first, t_state_it->first);
-
+            pair<int, int> multiplied_source(state_it->first,
+              t_state_it->first);
             // target state of the multiplied automaton
-            pair<int, int> multiplied_target(transition_it->second, t_transition_it->second);
-
-            // link the source and target states of the trimmed transducer with the tag
-            trimmed_t.linkStates(states_multiplied_trimmed[multiplied_source], states_multiplied_trimmed[multiplied_target], transition_it->first);
+            pair<int, int> multiplied_target(transition_it->second,
+              t_transition_it->second);
+            /* link the source and target states of the trimmed transducer with
+             * a symbol, the input tag of which is equal to the input tag of
+             * this class, and the output tag of which is equal to the output
+             * tag of t
+             */
+            trimmed_t.linkStates(states_multiplied_trimmed[multiplied_source],
+              states_multiplied_trimmed[multiplied_target],
+              trimmed_a(a.decode(transition_it->first).first,
+                t_a.decode(t_transition_it->first).second));
           }
           else
           {
@@ -880,7 +865,6 @@ Transducer::intersect(Transducer t)
     {
       // final state of the multiplied automaton
       pair<int, int> tmp(*it, *t_it);
-
       // insert the final state of the trimmed transducer
       trimmed_t.finals.insert(states_multiplied_trimmed[tmp]);
     }
@@ -888,10 +872,8 @@ Transducer::intersect(Transducer t)
 
   // initial state of the multiplied automaton
   pair<int, int> tmp(initial, t.initial);
-
   // set the initial state of the trimmed transducer
   trimmed_t.initial = states_multiplied_trimmed[tmp];
-
   // minimize the trimmed transducer
   trimmed_t.minimize();
 
