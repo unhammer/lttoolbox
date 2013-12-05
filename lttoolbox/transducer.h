@@ -286,24 +286,22 @@ public:
    * Converts this class into a prefix transducer
    * @param loopback_symbols a set of symbols of the alphabet for this class,
    *   all of the input and output tags of which are set equal
-   * @param prefix_a the alphabet of the prefix transducer
    * @param epsilon_tag the tag to take as epsilon
    * @return the prefix transducer
    */
   Transducer appendDotStar(const set<int> &loopback_symbols,
-                           const Alphabet prefix_a,
                            const int epsilon_tag = 0);
 
   /**
    * Intersects two finite-state transducers
    * @param t the Transducer with which this class is intersected
-   * @param a the alphabet of this transducer
+   * @param my_a the alphabet of this transducer
    * @param t_a the alphabet of the transducer t
    * @return the trimmed transducer
    */
-  Transducer intersect(Transducer t,
-                       Alphabet a,
-                       Alphabet t_a);
+  Transducer intersect(Transducer &t,
+                       Alphabet &my_a,
+                       Alphabet &t_a);
 };
 
 #endif

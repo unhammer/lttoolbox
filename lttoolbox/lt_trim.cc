@@ -100,7 +100,7 @@ trim(FILE *file_mono, FILE *file_bi)
 
   for(std::map<wstring, Transducer>::iterator it = trans_bi.begin(); it != trans_bi.end(); it++)
   {
-    Transducer prefix_tmp = it->second.appendDotStar(loopback_symbols, alph_prefix);
+    Transducer prefix_tmp = it->second.appendDotStar(loopback_symbols);
     if(prefix_transducer.isEmpty()) 
     {
       prefix_transducer = prefix_tmp;
@@ -109,20 +109,21 @@ trim(FILE *file_mono, FILE *file_bi)
     {
       prefix_transducer.unionWith(prefix_tmp);
     }
-    wcerr << it->first<<endl;
-    prefix_tmp.show(alph_prefix);
-    wcerr << L"current union:"<<endl;
-    prefix_transducer.show(alph_prefix);
+    // wcerr << it->first<<endl;
+    // prefix_tmp.show(alph_prefix);
+    // wcerr << L"current union:"<<endl;
+    // prefix_transducer.show(alph_prefix);
   }
-  prefix_transducer.minimize();
-  wcerr << L"minimized:"<<endl;
-  prefix_transducer.show(alph_prefix);
+  // prefix_transducer.minimize();
+  // wcerr << L"minimized:"<<endl;
+  // prefix_transducer.show(alph_prefix);
 
   for(std::map<wstring, Transducer>::iterator it = trans_mono.begin(); it != trans_mono.end(); it++)
   {
     // Transducer trimmed_tmp = it->second.intersect(prefix_transducer,
     //                                               alph_mono,
     //                                               alph_prefix);
+
     // wcerr << it->first<<endl;
     // trimmed_tmp.show(alph_mono);
     // trans_mono[it->first] = trimmed_tmp;

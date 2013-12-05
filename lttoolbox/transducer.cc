@@ -742,7 +742,6 @@ Transducer::unionWith(Transducer &t,
 
 Transducer
 Transducer::appendDotStar(const set<int> &loopback_symbols,
-  const Alphabet prefix_a,
   const int epsilon_tag)
 {
   // prefix transducer converted from the bilingual dictionary
@@ -772,7 +771,7 @@ Transducer::appendDotStar(const set<int> &loopback_symbols,
 }
 
 Transducer
-Transducer::intersect(Transducer t, Alphabet a, Alphabet t_a)
+Transducer::intersect(Transducer &t, Alphabet &my_a, Alphabet &t_a)
 {
   // map of the states of the multiplied and trimmed transducers
   map<pair<int, int>, int> states_multiplied_trimmed;
@@ -828,7 +827,7 @@ Transducer::intersect(Transducer t, Alphabet a, Alphabet t_a)
           /* check if the input tag of this class is equal to the output tag of
            * the transducer t
            */
-          if(a.decode(transition_it->first).first
+          if(my_a.decode(transition_it->first).first
             == t_a.decode(t_transition_it->first).second)
           {
             // source state of the multiplied automaton
