@@ -101,7 +101,7 @@ trim(FILE *file_mono, FILE *file_bi)
    * the alphabet of the prefix transducer
    */
   Alphabet prefix_alphabet;
-  alph_a.insertSymbolsIntoSet(loopback_symbols, prefix_alphabet);
+  alph_mono.insertSymbolsIntoSet(loopback_symbols, prefix_alphabet);
   prefix_transducers[it->first]=it->second.appendDotStar(loopback_symbols, prefix_alphabet);
   }
   for(std::map<wstring, Transducer>::iterator it = trans_mono.begin(); it != trans_mono.end(); it++)
