@@ -97,12 +97,8 @@ trim(FILE *file_mono, FILE *file_bi)
    * input and output tags of which are set equal
    */
   set<int> loopback_symbols;
-  /* TODO: define this!
-   * the alphabet of the prefix transducer
-   */
-  Alphabet prefix_alphabet;
-  alph_mono.insertSymbolsIntoSet(loopback_symbols, prefix_alphabet);
-  prefix_transducers[it->first]=it->second.appendDotStar(loopback_symbols, prefix_alphabet);
+  alph_mono.insertSymbolsIntoSet(loopback_symbols, alph_mono);
+  prefix_transducers[it->first]=it->second.appendDotStar(loopback_symbols, alph_mono);
   }
   for(std::map<wstring, Transducer>::iterator it = trans_mono.begin(); it != trans_mono.end(); it++)
   {
