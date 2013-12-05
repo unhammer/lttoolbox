@@ -733,11 +733,12 @@ Transducer::recognise(wstring patro, Alphabet &a, FILE *err)
   return accepted;
 }
 
-// void
-// Transducer::union(Transducer &t, int const epsilon_tag)
-// {
-//   insertTransducer(initial, t, epsilon_tag);
-// }
+void
+Transducer::unionWith(Transducer &t, 
+                      int const epsilon_tag)
+{
+  insertTransducer(initial, t, epsilon_tag);
+}
 
 Transducer
 Transducer::appendDotStar(const set<int> &loopback_symbols,
@@ -771,7 +772,7 @@ Transducer::appendDotStar(const set<int> &loopback_symbols,
 }
 
 Transducer
-Transducer::intersect(Transducer t, Alphabet a, Alphabet t_a, Alphabet trimmed_a)
+Transducer::intersect(Transducer t, Alphabet a, Alphabet t_a)
 {
   // map of the states of the multiplied and trimmed transducers
   map<pair<int, int>, int> states_multiplied_trimmed;
