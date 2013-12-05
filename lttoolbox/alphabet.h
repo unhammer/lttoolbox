@@ -37,19 +37,29 @@ class Alphabet
 {
 private:
   /**
-   * Symbol-identifier relationship.
+   * Symbol-identifier relationship. Only contains <tags>.
    * @see slexicinv
    */
   map<wstring, int, Ltstr> slexic;  
 
   /**
-   * Identifier-symbol relationship.
+   * Identifier-symbol relationship. Only contains <tags>.
    * @see slexic
    */
   vector<wstring> slexicinv;
 
 
+  /**
+   * Map from symbol-pairs to symbols; tags get negative numbers,
+   * other characters are wchar_t's casted to ints.
+   * @see spairinv
+   */
   map<pair<int,int>, int> spair;
+
+  /**
+   * All symbol-pairs (both <tags> and letters).
+   * @see spair
+   */
   vector<pair<int, int> > spairinv;
   
 
@@ -170,12 +180,14 @@ public:
   };
 
   /**
-   * For every symbol a:b, create a pair of the form b:b (or a:a if s==left),
-   * inserting the symbol into symbols, ensuring it exists in the alphabet too.
-   * @param symbols all loopback symbols are inserted into this set
+   * For every symbol a:b in basis, create a pair of the form b:b (or
+   * a:a if s==left), inserting the symbol into symbols, and ensuring
+   * it exists in this alphabet.
+   * @param basis use the symbols from this alphabet
+   * @param symbols all the loopback symbols, referenced with this alphabet
    * @param s whether to loopback on the left or right side of the symbol-pair
    */
-  void createLoopbackSymbols(set<int> &symbols, Side s = right);
+  void createLoopbackSymbols(set<int> &symbols, Alphabet &basis, Side s = right);
 };
 
 #endif
