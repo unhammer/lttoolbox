@@ -89,22 +89,27 @@ trim(FILE *file_mono, FILE *file_bi)
   Alphabet alph_bi = alph_trans_bi.first.first;
   std::map<wstring, Transducer> trans_bi = alph_trans_bi.second;
 
-  std::map<wstring, Transducer> prefix_transducers;
-  // Do we need the second type of this map? See line 115.
-  for(std::map<wstring, Transducer>::iterator it = trans_bi.begin(); it != trans_bi.end(); it++)
-  {
+  std::map<wstring, Transducer> trans_prefix;
   /* a set of symbols of the alphabet of the monolingual transducer, all of the
    * input and output tags of which are set equal
    */
   set<int> loopback_symbols;
-  alph_mono.insertSymbolsIntoSet(loopback_symbols, alph_mono);
-  prefix_transducers[it->first]=it->second.appendDotStar(loopback_symbols, alph_mono);
+  Alphabet alph_prefix = alph_mono;
+  alph_prefix.createLoopbackSymbols(loopback_symbols);
+
+
+
+  // Do we need the second type of this map? See line 115.
+  for(std::map<wstring, Transducer>::iterator it = trans_bi.begin(); it != trans_bi.end(); it++)
+  {
+
+    trans_prefix[it->first]=it->second.appendDotStar(loopback_symbols, alph_prefix);
   }
   for(std::map<wstring, Transducer>::iterator it = trans_mono.begin(); it != trans_mono.end(); it++)
   {
     // it->second.intersect(alph_mono, alph_bi, trans_bi);
   }
-  alph_trans_bi.second = prefix_transducers;
+  alph_trans_bi.second = trans_prefix;
   return alph_trans_bi;
 }
 

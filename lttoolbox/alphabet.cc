@@ -228,20 +228,20 @@ void Alphabet::setSymbol(int symbol, wstring newSymbolString) {
 }
 
 void
-Alphabet::insertSymbolsIntoSet(set<int> &symbols, Alphabet a, Tag t)
+Alphabet::createLoopbackSymbols(set<int> &symbols, Side s)
 {
-  for(map<wstring, int, Ltstr>::iterator it = slexic.begin(),
-                                         limit = slexic.end();
+  for(vector<pair<int,int> >::iterator it = spairinv.begin(),
+                                       limit = spairinv.end();
     it != limit;
     it++)
   {
-    if(t == kOutput)
+    if(s == left)
     {
-      symbols.insert(a(this->decode(it->second).second, this->decode(it->second).second));
+      symbols.insert(operator()(it->first, it->first));
     }
     else
     {
-      symbols.insert(a(this->decode(it->second).first, this->decode(it->second).first));
+      symbols.insert(operator()(it->second, it->second));
     }
   }
 }

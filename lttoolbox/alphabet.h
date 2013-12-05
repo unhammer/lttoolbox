@@ -85,7 +85,7 @@ public:
 
   /**
    * Get an unique code for every symbol pair.  This flavour is for
-   * character pairs.
+   * character pairs. Creates the code if it does not already exist.
    * @param c1 left symbol.
    * @param c2 right symbol.
    * @return code for (c1, c2).
@@ -93,7 +93,8 @@ public:
   int operator()(int const c1, int const c2);
   
   /**
-   * Gets the individual symbol identifier.
+   * Gets the individual symbol identifier. Assumes it already exists!
+   * @see isSymbolDefined to check if it exists first.
    * @param s symbol to be identified.
    * @return symbol identifier.
    */
@@ -141,28 +142,40 @@ public:
 		 bool uppercase = false) const;
 		 
   /**
-   * Checks whether a symbol is a tag or not
+   * Checks whether a symbol is a tag or not.
    * @param symbol the code of the symbol
    * @return true if the symbol is a tag
    */
   bool isTag(int const symbol) const;
 
   /**
-   * Sets an already existing symbol to represent a new value
+   * Sets an already existing symbol to represent a new value.
    * @param symbol the code of the symbol to set
    * @param newSymbolString the new string for this symbol
    */
   void setSymbol(int symbol, wstring newSymbolString);
 
+  /**
+   * Note: both the symbol int and int-pair are specific to this alphabet instance.
+   * @see operator() to go from general wstrings to alphabet-specific ints.
+   * @param code a symbol
+   * @return the pair which code represents in this alphabet
+   */
   pair<int, int> const & decode(int const code) const;
 
-  enum Tag
+  enum Side
   {
-    kInput,
-    kOutput
+    left,
+    right
   };
 
-  void insertSymbolsIntoSet(set<int> &symbols, Alphabet a, Tag t = kOutput);
+  /**
+   * For every symbol a:b, create a pair of the form b:b (or a:a if s==left),
+   * inserting the symbol into symbols, ensuring it exists in the alphabet too.
+   * @param symbols all loopback symbols are inserted into this set
+   * @param s whether to loopback on the left or right side of the symbol-pair
+   */
+  void createLoopbackSymbols(set<int> &symbols, Side s = right);
 };
 
 #endif
