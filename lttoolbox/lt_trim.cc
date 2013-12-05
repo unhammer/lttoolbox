@@ -89,26 +89,25 @@ trim(FILE *file_mono, FILE *file_bi)
   Alphabet alph_bi = alph_trans_bi.first.first;
   std::map<wstring, Transducer> trans_bi = alph_trans_bi.second;
 
-  // The prefix transducer is the bidix with a ".*" appended
-  std::map<wstring, Transducer> trans_prefix;
+  // The prefix transducer is the union of all transducers from bidix,
+  // with a ".*" appended
+  Transducer prefix_transducer;
   // The "." in ".*" is a set of equal pairs of the output symbols
   // from the monodix alphabet (<n>:<n> etc.)
-  set<int> loopback_symbols;
   Alphabet alph_prefix = alph_bi;
+  set<int> loopback_symbols;    // ints refer to alph_prefix
   alph_prefix.createLoopbackSymbols(loopback_symbols, alph_mono, Alphabet::right);
 
-  // Do we need the second type of this map? See call to appendDotStar
   for(std::map<wstring, Transducer>::iterator it = trans_bi.begin(); it != trans_bi.end(); it++)
   {
-
-    //trans_prefix[it->first]=it->second.appendDotStar(loopback_symbols, alph_prefix, alph_bi);
+    Transducer prefix_one = it->second.appendDotStar(loopback_symbols, alph_prefix);
+    // prefix_transducer.union(prefix_transducer.initial, prefix_one);
   }
   for(std::map<wstring, Transducer>::iterator it = trans_mono.begin(); it != trans_mono.end(); it++)
   {
     // it->second.intersect(alph_mono, alph_bi, trans_bi);
   }
-  alph_trans_bi.second = trans_prefix;
-  return alph_trans_bi;
+  return alph_trans_bi;         // TODO
 }
 
 

@@ -275,6 +275,13 @@ public:
   void read(FILE *input, int const decalage = 0);
 
   /**
+   * Insert another transducer into this, unifying source and targets
+   * @param t the transducer being inserted
+   * @param epsilon_tag the epsilon tag
+   */
+  /* void union(Transducer &t, const int epsilon_tag = 0); */
+
+  /**
    * Converts this class into a prefix transducer
    * @param loopback_symbols a set of symbols of the alphabet for this class,
    *   all of the input and output tags of which are set equal

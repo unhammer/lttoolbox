@@ -733,6 +733,12 @@ Transducer::recognise(wstring patro, Alphabet &a, FILE *err)
   return accepted;
 }
 
+// void
+// Transducer::union(Transducer &t, int const epsilon_tag)
+// {
+//   insertTransducer(initial, t, epsilon_tag);
+// }
+
 Transducer
 Transducer::appendDotStar(const set<int> &loopback_symbols,
   const Alphabet prefix_a,
