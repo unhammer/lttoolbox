@@ -751,10 +751,7 @@ Transducer::appendDotStar(const set<int> &loopback_symbols,
     loopback_it != loopback_limit;
     loopback_it++)
     {
-      /* check if the input tag of the symbol is equal to the tag to take as
-       * epsilon
-       */
-      if(prefix_a.decode(*loopback_it).first != epsilon_tag)
+      if((*loopback_it) != epsilon_tag)
       {
         /* link the final state of the prefix transducer to itself with the
          * symbol of this class

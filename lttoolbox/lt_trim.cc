@@ -90,13 +90,13 @@ trim(FILE *file_mono, FILE *file_bi)
   std::map<wstring, Transducer> trans_bi = alph_trans_bi.second;
 
   std::map<wstring, Transducer> trans_prefix;
-  /* a set of symbols of the alphabet of the monolingual transducer, all of the
-   * input and output tags of which are set equal
+  /* a set of symbols of the alphabet of the monolingual transducer,
+   * all of the input and output tags of which are set equal, for all
+   * output symbols of the monolingual transducer
    */
   set<int> loopback_symbols;
   Alphabet alph_prefix = alph_mono;
-  alph_prefix.createLoopbackSymbols(loopback_symbols);
-
+  alph_prefix.createLoopbackSymbols(loopback_symbols, Alphabet::right);
 
 
   // Do we need the second type of this map? See line 115.
