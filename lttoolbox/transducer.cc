@@ -734,8 +734,8 @@ Transducer::recognise(wstring patro, Alphabet &a, FILE *err)
 }
 
 Transducer
-Transducer::appendDotStar(set<int> &loopback_symbols,
-  Alphabet prefix_a,
+Transducer::appendDotStar(const set<int> &loopback_symbols,
+  const Alphabet prefix_a,
   const int epsilon_tag)
 {
   // prefix transducer converted from the bilingual dictionary
@@ -754,15 +754,7 @@ Transducer::appendDotStar(set<int> &loopback_symbols,
       /* check if the input tag of the symbol is equal to the tag to take as
        * epsilon
        */
-      if(prefix_a.decode(*loopback_it).first == epsilon_tag)
-      {
-        /* erase the symbol without erasing it from the set itself (do not call
-         * the set by reference)
-         */
-        loopback_symbols.erase(loopback_it);
-        continue;
-      }
-      else
+      if(prefix_a.decode(*loopback_it).first != epsilon_tag)
       {
         /* link the final state of the prefix transducer to itself with the
          * symbol of this class
