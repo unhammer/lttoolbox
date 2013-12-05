@@ -282,7 +282,7 @@ public:
    * @param epsilon_tag the tag to take as epsilon
    * @return the prefix transducer
    */
-  Transducer appendDotStar(set<int> loopback_symbols,
+  Transducer appendDotStar(set<int> &loopback_symbols,
     Alphabet prefix_a,
     const int epsilon_tag = 0);
 

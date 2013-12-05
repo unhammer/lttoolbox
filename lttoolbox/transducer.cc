@@ -734,7 +734,7 @@ Transducer::recognise(wstring patro, Alphabet &a, FILE *err)
 }
 
 Transducer
-Transducer::appendDotStar(set<int> loopback_symbols,
+Transducer::appendDotStar(set<int> &loopback_symbols,
   Alphabet prefix_a,
   const int epsilon_tag)
 {
