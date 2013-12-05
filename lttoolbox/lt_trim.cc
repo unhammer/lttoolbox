@@ -96,10 +96,8 @@ trim(FILE *file_mono, FILE *file_bi)
   set<int> loopback_symbols;
   Alphabet alph_prefix = alph_bi;
   alph_prefix.createLoopbackSymbols(loopback_symbols, alph_mono, Alphabet::right);
-  
 
-
-  // Do we need the second type of this map? See line 115.
+  // Do we need the second type of this map? See call to appendDotStar
   for(std::map<wstring, Transducer>::iterator it = trans_bi.begin(); it != trans_bi.end(); it++)
   {
 
