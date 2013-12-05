@@ -734,14 +734,10 @@ Transducer::recognise(wstring patro, Alphabet &a, FILE *err)
 }
 
 Transducer
-Transducer::appendDotStar(Alphabet alphabet_monolingual, const int epsilon_tag)
+Transducer::appendDotStar(set<int> loopback_symbols,
+  Alphabet prefix_a,
+  const int epsilon_tag)
 {
-  /* set of symbols, the input tags of which are set equal to the output tags
-   * of the alphabet
-   */
-  set<int> set_symbols;
-  // insert symbols from the alphabet of the monolingual dictionary
-  alphabet_monolingual.insertSymbolsIntoSet(set_symbols);
   // prefix transducer converted from the bilingual dictionary
   Transducer prefix_transducer(*this);
 
@@ -750,22 +746,28 @@ Transducer::appendDotStar(Alphabet alphabet_monolingual, const int epsilon_tag)
       prefix_it != prefix_limit;
       prefix_it++)
   {
-    for(set<int>::iterator set_it = set_symbols.begin(),
-                         set_limit = set_symbols.end();
-    set_it != set_limit;
-    set_it++)
+    for(set<int>::iterator loopback_it = loopback_symbols.begin(),
+                           loopback_limit = loopback_symbols.end();
+    loopback_it != loopback_limit;
+    loopback_it++)
     {
-      // check if the symbol is equal to the tag to take as epsilon
-      if(*set_it == epsilon_tag)
+      /* check if the input tag of the symbol is equal to the tag to take as
+       * epsilon
+       */
+      if(prefix_a.decode(*loopback_it).first == epsilon_tag)
       {
+        /* erase the symbol without erasing it from the set itself (do not call
+         * the set by reference)
+         */
+        loopback_symbols.erase(loopback_it);
         continue;
       }
       else
       {
         /* link the final state of the prefix transducer to itself with the
-         * symbol
+         * symbol of this class
          */
-        prefix_transducer.linkStates(*prefix_it, *prefix_it, *set_it);
+        prefix_transducer.linkStates(*prefix_it, *prefix_it, *loopback_it);
       }
     }
   }
@@ -807,23 +809,28 @@ Transducer::intersect(Transducer t, Alphabet a, Alphabet t_a, Alphabet trimmed_a
     state_it != state_limit;
     state_it++)
   {
-    for(map<int, multimap<int, int> >::iterator t_state_it = t.transitions.begin(),
-                                                t_state_limit = t.transitions.end();
+    for(map<int, multimap<int, int> >::iterator t_state_it
+        = t.transitions.begin(),
+                                                t_state_limit
+        = t.transitions.end();
       t_state_it != t_state_limit;
       t_state_it++)
     {
       for(multimap<int, int>::iterator transition_it = state_it->second.begin(),
-                                       transition_limit = state_it->second.end();
+                                       transition_limit
+          = state_it->second.end();
         transition_it != transition_limit;
         transition_it++)
       {
-        for(multimap<int, int>::iterator t_transition_it = t_state_it->second.begin(),
-                                         t_transition_limit = t_state_it->second.end();
+        for(multimap<int, int>::iterator t_transition_it
+            = t_state_it->second.begin(),
+                                         t_transition_limit
+            = t_state_it->second.end();
           t_transition_it != t_transition_limit;
           t_transition_it++)
         {
           /* check if the input tag of this class is equal to the output tag of
-           * t
+           * the transducer t
            */
           if(a.decode(transition_it->first).first
             == t_a.decode(t_transition_it->first).second)
@@ -835,14 +842,11 @@ Transducer::intersect(Transducer t, Alphabet a, Alphabet t_a, Alphabet trimmed_a
             pair<int, int> multiplied_target(transition_it->second,
               t_transition_it->second);
             /* link the source and target states of the trimmed transducer with
-             * a symbol, the input tag of which is equal to the input tag of
-             * this class, and the output tag of which is equal to the output
-             * tag of t
+             * the symbol of this class
              */
             trimmed_t.linkStates(states_multiplied_trimmed[multiplied_source],
               states_multiplied_trimmed[multiplied_target],
-              trimmed_a(a.decode(transition_it->first).first,
-                t_a.decode(t_transition_it->first).second));
+              transition_it->first);
           }
           else
           {

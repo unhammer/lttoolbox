@@ -162,7 +162,7 @@ public:
     kOutput
   };
 
-  void insertSymbolsIntoSet(set<int> &symbols, Tag t = kOutput);
+  void insertSymbolsIntoSet(set<int> &symbols, Alphabet a, Tag t = kOutput);
 };
 
 #endif
