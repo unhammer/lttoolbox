@@ -289,8 +289,8 @@ public:
    * @param epsilon_tag the tag to take as epsilon
    * @return the prefix transducer
    */
-  Transducer appendDotStar(const set<int> &loopback_symbols,
-                           const int epsilon_tag = 0);
+  Transducer appendDotStar(set<int> const &loopback_symbols,
+                           int const epsilon_tag = 0);
 
   /**
    * Intersects two finite-state transducers
@@ -299,9 +299,9 @@ public:
    * @param t_a the alphabet of the transducer t
    * @return the trimmed transducer
    */
-  Transducer intersect(Transducer &t,
-                       Alphabet &my_a,
-                       Alphabet &t_a);
+  Transducer intersect(Transducer const &t,
+                       Alphabet const &my_a,
+                       Alphabet const &t_a);
 
   void wideConsoleErrorFinals();
 };
