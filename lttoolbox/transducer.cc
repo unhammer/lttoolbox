@@ -773,9 +773,10 @@ Transducer::appendDotStar(set<int> const &loopback_symbols, int const epsilon_ta
 }
 
 Transducer
-Transducer::intersect(Transducer const &t,
+Transducer::intersect(Transducer &t,
   Alphabet const &my_a,
-  Alphabet const &t_a)
+  Alphabet const &t_a,
+  int const epsilon_tag)
 {
   // map of the states of the multiplied and trimmed transducers
   map<pair<int, int>, int> states_multiplied_trimmed;
@@ -789,6 +790,8 @@ Transducer::intersect(Transducer const &t,
     it != limit;
     it++)
   {
+    linkStates(it->first, it->first, epsilon_tag);
+
     for(map<int, multimap<int, int> >::const_iterator t_it
         = t.transitions.begin(),
                                                       t_limit
@@ -796,6 +799,7 @@ Transducer::intersect(Transducer const &t,
       t_it != t_limit;
       t_it++)
     {
+      t.linkStates(t_it->first, t_it->first, epsilon_tag);
       // state of the multiplied automaton
       pair<int, int> tmp(it->first, t_it->first);
       /* map the state of the multiplied automaton with a new state of the
@@ -885,7 +889,7 @@ Transducer::intersect(Transducer const &t,
             wstring right_bilingual = L"";
             t_a.getSymbol(right_bilingual,
               t_a.decode(t_transition_it->first).second);
-            wcerr << L"not linking (("
+            /* wcerr << L"not linking (("
               << multiplied_source.first
               << L", "
               << multiplied_source.second
@@ -909,7 +913,7 @@ Transducer::intersect(Transducer const &t,
               << left_bilingual
               << L", "
               << right_bilingual
-              << L")"<<endl;
+              << L")"<<endl; */
             continue;
           }
         }
