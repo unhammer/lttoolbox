@@ -100,25 +100,23 @@ trim(FILE *file_mono, FILE *file_bi)
 
   for(std::map<wstring, Transducer>::iterator it = trans_bi.begin(); it != trans_bi.end(); it++)
   {
-    Transducer prefix_tmp = it->second;
-
+    Transducer union_tmp = it->second;
     if(union_transducer.isEmpty()) 
     {
-      union_transducer = prefix_tmp;
-      wcerr << L"union_transducer:"<<endl;
+      union_transducer = union_tmp;
+      wcerr << L"initially, union_transducer (" << it->first << L"):"<< endl;
       union_transducer.show(alph_bi);
     }
     else 
     {
-      wcerr << L"unioning union_transducer:"<<endl;
+      wcerr << L"unioning current union_transducer:"<<endl;
       union_transducer.show(alph_bi);
-      wcerr << L"with prefix_tmp"<<endl;
-      prefix_tmp.show(alph_bi);
-      union_transducer.unionWith(alph_bi, prefix_tmp);
+      wcerr << L"with union_tmp (" << it->first << L")"<< endl;
+      union_tmp.show(alph_bi);
+      union_transducer.unionWith(alph_bi, union_tmp);
+      wcerr << L"current union now:"<<endl;
+      union_transducer.show(alph_prefix);
     }
-    wcerr << it->first<<endl;
-    wcerr << L"current union:"<<endl;
-    union_transducer.show(alph_prefix);
   }
   union_transducer.minimize();
   wcerr << L"minimized union:"<<endl;
