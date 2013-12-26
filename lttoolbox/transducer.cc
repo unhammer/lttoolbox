@@ -854,6 +854,7 @@ Transducer::intersect(Transducer &t,
             // target state of the multiplied automaton
             pair<int, int> multiplied_target(transition_it->second,
               t_transition_it->second);
+#ifdef DEBUG
             wcerr << L"linking (("
                   << multiplied_source.first
                   << L", "
@@ -871,6 +872,7 @@ Transducer::intersect(Transducer &t,
                   << L", "
                   << right_monolingual
                   << L")"<<endl;
+#endif /* DEBUG */
             /* link the source and target states of the trimmed transducer with
              * the symbol of this class
              */
@@ -942,12 +944,14 @@ Transducer::intersect(Transducer &t,
   pair<int, int> tmp(initial, t.initial);
   // set the initial state of the trimmed transducer
   trimmed_t.initial = states_multiplied_trimmed[tmp];
+#ifdef DEBUG
   wcerr << L"initial state: " << trimmed_t.getInitial()<<endl;
   Alphabet show_should_probably_accept_const_a = my_a;
   trimmed_t.show(show_should_probably_accept_const_a);
   trimmed_t.wideConsoleErrorFinals();
   wcerr << L"trimmed_t.minimize();";
   cin.ignore();
+#endif /* DEBUG */
   // minimize the trimmed transducer
   trimmed_t.minimize();
 
