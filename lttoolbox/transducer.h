@@ -189,7 +189,9 @@ public:
    * Print all the transductions of a transducer in ATT format
    * @param epsilon_tag the tag to take as epsilon
    */
-  void show(Alphabet &a, FILE *output = stdout, int const epsilon_tag = 0);
+  void show(Alphabet const &a,
+    FILE *output = stdout,
+    int const epsilon_tag = 0);
 
   /**
    * Determinize the transducer
@@ -301,7 +303,7 @@ public:
    * @param t_a the alphabet of the transducer t
    * @return the trimmed transducer
    */
-  Transducer intersect(Transducer const &t,
+  Transducer intersect(Transducer &t,
                        Alphabet const &my_a,
                        Alphabet const &t_a,
                        int const epsilon_tag = 0);
