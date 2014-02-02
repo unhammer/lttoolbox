@@ -779,6 +779,11 @@ Transducer::intersect(Transducer &t,
   Alphabet const &t_a,
   int const epsilon_tag)
 {
+  // TODO: we need a list of seen SearchState's to avoid doing the
+  // same path twice (and looping?)
+
+  // TODO: actually build up the trimmed transducer
+
   Transducer trimmed_t;
 
   // first: currently searched state in this; second: current live states in t
