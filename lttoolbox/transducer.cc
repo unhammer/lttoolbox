@@ -782,6 +782,9 @@ Transducer::intersect(Transducer &trimmer,
   // TODO: we need a list of seen SearchState's to avoid doing the
   // same path twice (and looping?)
 
+  // TODO: We get an epsilon-transition to final state, why? Gives
+  // Error: Invalid dictionary (hint: the left side of an entry is empty)
+
   // state numbers may differ in this transducer and the trimmed:
   map<int, int> states_this_trimmed;
   Transducer trimmed_t;
