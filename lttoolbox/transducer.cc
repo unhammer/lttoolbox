@@ -774,17 +774,18 @@ Transducer::appendDotStar(set<int> const &loopback_symbols, int const epsilon_ta
 }
 
 Transducer
-Transducer::intersect(Transducer &t,
-  Alphabet const &my_a,
-  Alphabet const &t_a,
+Transducer::intersect(Transducer &trimmer,
+  Alphabet const &this_a,
+  Alphabet const &trimmer_a,
   int const epsilon_tag)
 {
   // TODO: we need a list of seen SearchState's to avoid doing the
   // same path twice (and looping?)
 
-  // TODO: actually build up the trimmed transducer
-
+  // state numbers may differ in this transducer and the trimmed:
+  map<int, int> states_this_trimmed;
   Transducer trimmed_t;
+  states_this_trimmed.insert(make_pair(initial, trimmed_t.initial));
 
   // first: currently searched state in this; second: current live states in t
   typedef std::pair<int, set<int> > SearchState;
@@ -793,47 +794,53 @@ Transducer::intersect(Transducer &t,
   
   SearchState current;
   current.first = initial;
-  current.second.insert(t.initial);
+  current.second.insert(trimmer.initial);
   todo.push_front(current);
 
   while(todo.size() > 0)
   {
     current = todo.front();
     todo.pop_front();
-    // loop through arcs from current.first; when our arc matches an
-    // arc from current.second, add that to (the front of) todo
-    for(multimap<int, int>::iterator it = transitions[current.first].begin(),
-                                     limit = transitions[current.first].end();
-      it != limit;
-      it++)
+    int this_src = current.first;
+    set<int> live_trimmer_states = current.second;
+    // Loop through arcs from this_src; when our arc matches an arc
+    // from live_trimmer_states, add that to (the front of) todo:
+    for(multimap<int, int>::iterator it = transitions[this_src].begin(),
+                                     limit = transitions[this_src].end();
+        it != limit;
+        it++)
     {
+      int label    = it->first,
+          this_trg = it->second;
       SearchState next;
-      for(set<int>::iterator t_state_it = current.second.begin(),
-                             t_state_limit = current.second.end();
-        t_state_it != t_state_limit;
-        t_state_it++)
+      // Loop through live states in our t transducer:
+      for(set<int>::iterator trimmer_state_it = live_trimmer_states.begin(),
+                             trimmer_state_limit = live_trimmer_states.end();
+          trimmer_state_it != trimmer_state_limit;
+          trimmer_state_it++)
       {
-        for(multimap<int, int>::iterator t_transition_it
-            = t.transitions.at(*t_state_it).begin(),
-                                         t_transition_limit
-            = t.transitions.at(*t_state_it).end();
-          t_transition_it != t_transition_limit;
-          t_transition_it++)
+        // Loop through arcs from each live state of t:
+        for(multimap<int, int>::iterator trimmer_transition_it
+            = trimmer.transitions.at(*trimmer_state_it).begin(),
+                                         trimmer_transition_limit
+            = trimmer.transitions.at(*trimmer_state_it).end();
+          trimmer_transition_it != trimmer_transition_limit;
+          trimmer_transition_it++)
         {
           wstring right = L"",
                   t_left = L"";
-          my_a.getSymbol(right, my_a.decode(it->first).second);
-          t_a.getSymbol(t_left,
-            t_a.decode(t_transition_it->first).first);
+          this_a.getSymbol(right, this_a.decode(label).second);
+          trimmer_a.getSymbol(t_left,
+            trimmer_a.decode(trimmer_transition_it->first).first);
 #ifdef DEBUG
           wstring left = L"",
                   t_right = L"";
-          my_a.getSymbol(left, my_a.decode(it->first).first);
-          t_a.getSymbol(t_right,
-            t_a.decode(t_transition_it->first).second);
-          wcerr << current.first
+          this_a.getSymbol(left, this_a.decode(label).first);
+          trimmer_a.getSymbol(t_right,
+            trimmer_a.decode(trimmer_transition_it->first).second);
+          wcerr << this_src
                 << L"\t"
-                << it->second
+                << this_trg
                 << L"\t"
                 << left
                 << L"\t"
@@ -843,8 +850,17 @@ Transducer::intersect(Transducer &t,
 
           if(right == t_left)
           {
-            next.second.insert(t_transition_it->second);
+            next.second.insert(trimmer_transition_it->second);
             wcerr << L"equal to    ";
+            int trimmed_src = states_this_trimmed[this_src];
+            if(states_this_trimmed.find(this_trg) == states_this_trimmed.end())
+            {
+              states_this_trimmed.insert(make_pair(this_trg, trimmed_t.newState()));
+            }
+            int trimmed_trg =  states_this_trimmed[this_trg];
+            trimmed_t.linkStates(trimmed_src, // fromState
+                                 trimmed_trg, // toState
+                                 label);      // symbol-pair, using the same alphabet
           }
 #ifdef DEBUG
           else
@@ -853,9 +869,9 @@ Transducer::intersect(Transducer &t,
           }
 
           wcerr << L"\t"
-                << *t_state_it
+                << *trimmer_state_it
                 << L"\t "
-                << t_transition_it->second
+                << trimmer_transition_it->second
                 << L"\t "
                 << t_left
                 << L"\t "
@@ -865,19 +881,28 @@ Transducer::intersect(Transducer &t,
       }
       if(next.second.size() > 0)
       {
-        next.first = it->second;
+        next.first = this_trg;
         todo.push_front(next);
       }
     }
   }
 
+
+  for(set<int>::iterator it = finals.begin(),
+        limit = finals.end();
+      it != limit;
+      it++)
+  {
+    trimmed_t.finals.insert(states_this_trimmed[*it]);
+  }
+
+
 #ifdef DEBUG
   wcerr << L"initial state: " << trimmed_t.getInitial()<<endl;
-  Alphabet show_should_probably_accept_const_a = my_a;
+  Alphabet show_should_probably_accept_const_a = this_a;
   trimmed_t.show(show_should_probably_accept_const_a);
   trimmed_t.wideConsoleErrorFinals();
   wcerr << L"trimmed_t.minimize();";
-  cin.ignore();
 #endif /* DEBUG */
 
   // minimize the trimmed transducer
