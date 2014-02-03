@@ -791,8 +791,6 @@ Transducer::intersect(Transducer &trimmer,
   states_this_trimmed.insert(make_pair(initial, trimmed.initial));
 
   Alphabet show_should_probably_accept_const_a = this_a;
-  wcerr <<L"trimmed initially:"<<endl;
-  trimmed.show(show_should_probably_accept_const_a);
 
   // first: currently searched state in this; second: current live states in trimmer
   typedef std::pair<int, set<int> > SearchState;
@@ -813,13 +811,13 @@ Transducer::intersect(Transducer &trimmer,
     set<int> live_trimmer_states = current.second;
     // Loop through arcs from this_src; when our arc matches an arc
     // from live_trimmer_states, add that to (the front of) todo:
-    for(multimap<int, int>::iterator it = transitions[this_src].begin(),
-                                     limit = transitions[this_src].end();
-        it != limit;
-        it++)
+    for(multimap<int, int>::iterator trans_it = transitions[this_src].begin(),
+                                     trans_limit = transitions[this_src].end();
+        trans_it != trans_limit;
+        trans_it++)
     {
-      int label    = it->first,
-          this_trg = it->second;
+      int this_label = trans_it->first,
+          this_trg   = trans_it->second;
       SearchState next;
       // Loop through live states in our trimmer transducer:
       for(set<int>::iterator trimmer_state_it = live_trimmer_states.begin(),
@@ -829,26 +827,27 @@ Transducer::intersect(Transducer &trimmer,
       {
         int trimmer_src = (*trimmer_state_it);
         // Loop through arcs from each live state of trimmer:
-        for(multimap<int, int>::iterator trimmer_transition_it
+        for(multimap<int, int>::iterator trimmer_trans_it
             = trimmer.transitions.at(trimmer_src).begin(),
-                                         trimmer_transition_limit
+                                         trimmer_trans_limit
             = trimmer.transitions.at(trimmer_src).end();
-          trimmer_transition_it != trimmer_transition_limit;
-          trimmer_transition_it++)
+          trimmer_trans_it != trimmer_trans_limit;
+          trimmer_trans_it++)
         {
+          int trimmer_label = trimmer_trans_it->first,
+              trimmer_trg   = trimmer_trans_it->second;
           wstring this_right = L"",
                   trimmer_left = L"";
           this_a.getSymbol(this_right,
-                           this_a.decode(label).second);
+                           this_a.decode(this_label).second);
           trimmer_a.getSymbol(trimmer_left,
-                              trimmer_a.decode(trimmer_transition_it->first).first);
-          int trimmer_trg = trimmer_transition_it->second;
+                              trimmer_a.decode(trimmer_label).first);
 #ifdef DEBUG
           wstring this_left = L"",
                   trimmer_right = L"";
-          this_a.getSymbol(this_left, this_a.decode(label).first);
+          this_a.getSymbol(this_left, this_a.decode(this_label).first);
           trimmer_a.getSymbol(trimmer_right,
-                              trimmer_a.decode(trimmer_transition_it->first).second);
+                              trimmer_a.decode(trimmer_label).second);
           wcerr << this_src
                 << L"\t"
                 << this_trg
@@ -859,7 +858,7 @@ Transducer::intersect(Transducer &trimmer,
                 << L"\tis ";
 #endif /* DEBUG */
 
-          if(this_right == trimmer_left || label == epsilon_tag)
+          if(this_right == trimmer_left || this_label == epsilon_tag)
           {
             if(seen.find(make_pair(this_trg, trimmer_trg)) == seen.end()) 
             {
@@ -876,7 +875,7 @@ Transducer::intersect(Transducer &trimmer,
             int trimmed_trg =  states_this_trimmed[this_trg];
             trimmed.linkStates(trimmed_src, // fromState
                                trimmed_trg, // toState
-                               label);      // symbol-pair, using the same alphabet
+                               this_label); // symbol-pair, using this alphabet
           }
 #ifdef DEBUG
           else
@@ -893,7 +892,7 @@ Transducer::intersect(Transducer &trimmer,
                 << L"\t"
                 << (trimmer_right == L"" ? L"ε" : trimmer_right)
                 <<endl;
-          if(this_right == trimmer_left || label == epsilon_tag) 
+          if(this_right == trimmer_left || this_label == epsilon_tag) 
           {
             wcerr<<L"vvv Trimmed after inserting: vvv"<<endl;
             trimmed.show(show_should_probably_accept_const_a);
