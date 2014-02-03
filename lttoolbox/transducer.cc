@@ -785,6 +785,10 @@ Transducer::intersect(Transducer &trimmer,
   // TODO: Give an error message if trimming produces an empty
   // dictionary (otherwise just gives segfault on lt-proc)
 
+  // TODO: If this_right == '+' (<j/>), add a transition from initial
+
+  // TODO: If this_right is a compound_tag, unconditionally add to next
+
   // State numbers may differ in this transducer and the trimmed:
   Transducer trimmed;
   map<int, int> states_this_trimmed;
