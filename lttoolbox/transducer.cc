@@ -26,7 +26,6 @@
 #include <iostream>
 #include <vector>
 
-#define DEBUG
 
 int
 Transducer::newState()
@@ -779,21 +778,23 @@ Transducer::intersect(Transducer &trimmer,
   Alphabet const &trimmer_a,
   int const epsilon_tag)
 {
-  // TODO: we need a list of seen SearchState's to avoid doing the
-  // same path twice (and looping?)
+  /**
+   * this ∩ trimmer = trimmed
+   */
 
   // TODO: We get an epsilon-transition to final state, why? Gives
   // Error: Invalid dictionary (hint: the left side of an entry is empty)
 
   // state numbers may differ in this transducer and the trimmed:
   map<int, int> states_this_trimmed;
-  Transducer trimmed_t;
-  states_this_trimmed.insert(make_pair(initial, trimmed_t.initial));
+  Transducer trimmed;
+  states_this_trimmed.insert(make_pair(initial, trimmed.initial));
 
   // first: currently searched state in this; second: current live states in t
   typedef std::pair<int, set<int> > SearchState;
 
   std::list<SearchState> todo;
+  std::set<std::pair<int, int> > seen;
   
   SearchState current;
   current.first = initial;
@@ -816,30 +817,33 @@ Transducer::intersect(Transducer &trimmer,
       int label    = it->first,
           this_trg = it->second;
       SearchState next;
-      // Loop through live states in our t transducer:
+      // Loop through live states in our trimmer transducer:
       for(set<int>::iterator trimmer_state_it = live_trimmer_states.begin(),
                              trimmer_state_limit = live_trimmer_states.end();
           trimmer_state_it != trimmer_state_limit;
           trimmer_state_it++)
       {
-        // Loop through arcs from each live state of t:
+        int trimmer_src = (*trimmer_state_it);
+        // Loop through arcs from each live state of trimmer:
         for(multimap<int, int>::iterator trimmer_transition_it
-            = trimmer.transitions.at(*trimmer_state_it).begin(),
+            = trimmer.transitions.at(trimmer_src).begin(),
                                          trimmer_transition_limit
-            = trimmer.transitions.at(*trimmer_state_it).end();
+            = trimmer.transitions.at(trimmer_src).end();
           trimmer_transition_it != trimmer_transition_limit;
           trimmer_transition_it++)
         {
           wstring right = L"",
-                  t_left = L"";
-          this_a.getSymbol(right, this_a.decode(label).second);
-          trimmer_a.getSymbol(t_left,
-            trimmer_a.decode(trimmer_transition_it->first).first);
+                  trimmer_left = L"";
+          this_a.getSymbol(right,
+                           this_a.decode(label).second);
+          trimmer_a.getSymbol(trimmer_left,
+                              trimmer_a.decode(trimmer_transition_it->first).first);
+          int trimmer_trg = trimmer_transition_it->second;
 #ifdef DEBUG
           wstring left = L"",
-                  t_right = L"";
+                  trimmer_right = L"";
           this_a.getSymbol(left, this_a.decode(label).first);
-          trimmer_a.getSymbol(t_right,
+          trimmer_a.getSymbol(trimmer_right,
             trimmer_a.decode(trimmer_transition_it->first).second);
           wcerr << this_src
                 << L"\t"
@@ -851,19 +855,24 @@ Transducer::intersect(Transducer &trimmer,
                 << L"\tis ";
 #endif /* DEBUG */
 
-          if(right == t_left)
+          if(right == trimmer_left)
           {
-            next.second.insert(trimmer_transition_it->second);
+            if(seen.find(make_pair(this_trg, trimmer_trg)) == seen.end()) 
+            {
+              next.second.insert(trimmer_trg);
+            }
+#ifdef DEBUG
             wcerr << L"equal to    ";
+#endif /* DEBUG */
             int trimmed_src = states_this_trimmed[this_src];
             if(states_this_trimmed.find(this_trg) == states_this_trimmed.end())
             {
-              states_this_trimmed.insert(make_pair(this_trg, trimmed_t.newState()));
+              states_this_trimmed.insert(make_pair(this_trg, trimmed.newState()));
             }
             int trimmed_trg =  states_this_trimmed[this_trg];
-            trimmed_t.linkStates(trimmed_src, // fromState
-                                 trimmed_trg, // toState
-                                 label);      // symbol-pair, using the same alphabet
+            trimmed.linkStates(trimmed_src, // fromState
+                               trimmed_trg, // toState
+                               label);      // symbol-pair, using the same alphabet
           }
 #ifdef DEBUG
           else
@@ -872,23 +881,29 @@ Transducer::intersect(Transducer &trimmer,
           }
 
           wcerr << L"\t"
-                << *trimmer_state_it
+                << trimmer_src
                 << L"\t "
-                << trimmer_transition_it->second
+                << trimmer_trg
                 << L"\t "
-                << t_left
+                << trimmer_left
                 << L"\t "
-                << t_right<<endl;
+                << trimmer_right<<endl;
 #endif /* DEBUG */
         }
-      }
+
+#ifdef DEBUG
+        wcerr << this_src<<L"\t\t\t\t\t\t"<< trimmer_src <<L"\t marked as seen"<<endl;
+#endif /* DEBUG */
+        seen.insert(make_pair(this_src, trimmer_src));
+      } // end loop live trimmer states
+
       if(next.second.size() > 0)
       {
         next.first = this_trg;
         todo.push_front(next);
       }
-    }
-  }
+    } // end loop arcs from this_src
+  } // end while todo
 
 
   for(set<int>::iterator it = finals.begin(),
@@ -896,22 +911,22 @@ Transducer::intersect(Transducer &trimmer,
       it != limit;
       it++)
   {
-    trimmed_t.finals.insert(states_this_trimmed[*it]);
+    trimmed.finals.insert(states_this_trimmed[*it]);
   }
 
 
 #ifdef DEBUG
-  wcerr << L"initial state: " << trimmed_t.getInitial()<<endl;
+  wcerr << L"initial state: " << trimmed.getInitial()<<endl;
   Alphabet show_should_probably_accept_const_a = this_a;
-  trimmed_t.show(show_should_probably_accept_const_a);
-  trimmed_t.wideConsoleErrorFinals();
-  wcerr << L"trimmed_t.minimize();";
+  trimmed.show(show_should_probably_accept_const_a);
+  trimmed.wideConsoleErrorFinals();
+  wcerr << L"trimmed.minimize();";
 #endif /* DEBUG */
 
   // minimize the trimmed transducer
-  trimmed_t.minimize();
+  trimmed.minimize();
 
-  return trimmed_t;
+  return trimmed;
 }
 
 void
