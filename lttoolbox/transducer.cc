@@ -621,7 +621,7 @@ Transducer::reverse(int const epsilon_tag)
 void
 Transducer::show(Alphabet const &alphabet, FILE *output, int const epsilon_tag)
 {
-  joinFinals(epsilon_tag);
+//  joinFinals(epsilon_tag);
 
   map<int, multimap<int, int> > temporal;
 
@@ -759,11 +759,8 @@ Transducer::appendDotStar(set<int> const &loopback_symbols, int const epsilon_ta
     loopback_it != loopback_limit;
     loopback_it++)
     {
-      if((*loopback_it) != epsilon_tag)
+      if((*loopback_it) != epsilon_tag) // TODO: Necessary? Minimization should remove epsilon loopbacks anyway
       {
-        /* link the final state of the prefix transducer to itself with the
-         * symbol of this class
-         */
         prefix_transducer.linkStates(*prefix_it, *prefix_it, *loopback_it);
       }
     }
@@ -778,19 +775,26 @@ Transducer::intersect(Transducer &trimmer,
   Alphabet const &trimmer_a,
   int const epsilon_tag)
 {
+  joinFinals(epsilon_tag);
   /**
    * this ∩ trimmer = trimmed
+   * 
+   * The trimmer is typically a bidix passed through appendDotStar.
    */
 
-  // TODO: We get an epsilon-transition to final state, why? Gives
-  // Error: Invalid dictionary (hint: the left side of an entry is empty)
+  // TODO: Give an error message if trimming produces an empty
+  // dictionary (otherwise just gives segfault on lt-proc)
 
-  // state numbers may differ in this transducer and the trimmed:
-  map<int, int> states_this_trimmed;
+  // State numbers may differ in this transducer and the trimmed:
   Transducer trimmed;
+  map<int, int> states_this_trimmed;
   states_this_trimmed.insert(make_pair(initial, trimmed.initial));
 
-  // first: currently searched state in this; second: current live states in t
+  Alphabet show_should_probably_accept_const_a = this_a;
+  wcerr <<L"trimmed initially:"<<endl;
+  trimmed.show(show_should_probably_accept_const_a);
+
+  // first: currently searched state in this; second: current live states in trimmer
   typedef std::pair<int, set<int> > SearchState;
 
   std::list<SearchState> todo;
@@ -832,30 +836,30 @@ Transducer::intersect(Transducer &trimmer,
           trimmer_transition_it != trimmer_transition_limit;
           trimmer_transition_it++)
         {
-          wstring right = L"",
+          wstring this_right = L"",
                   trimmer_left = L"";
-          this_a.getSymbol(right,
+          this_a.getSymbol(this_right,
                            this_a.decode(label).second);
           trimmer_a.getSymbol(trimmer_left,
                               trimmer_a.decode(trimmer_transition_it->first).first);
           int trimmer_trg = trimmer_transition_it->second;
 #ifdef DEBUG
-          wstring left = L"",
+          wstring this_left = L"",
                   trimmer_right = L"";
-          this_a.getSymbol(left, this_a.decode(label).first);
+          this_a.getSymbol(this_left, this_a.decode(label).first);
           trimmer_a.getSymbol(trimmer_right,
-            trimmer_a.decode(trimmer_transition_it->first).second);
+                              trimmer_a.decode(trimmer_transition_it->first).second);
           wcerr << this_src
                 << L"\t"
                 << this_trg
                 << L"\t"
-                << left
+                << (this_left == L"" ? L"ε" : this_left)
                 << L"\t"
-                << right
+                << (this_right == L"" ? L"ε" : this_right)
                 << L"\tis ";
 #endif /* DEBUG */
 
-          if(right == trimmer_left)
+          if(this_right == trimmer_left || label == epsilon_tag)
           {
             if(seen.find(make_pair(this_trg, trimmer_trg)) == seen.end()) 
             {
@@ -885,14 +889,21 @@ Transducer::intersect(Transducer &trimmer,
                 << L"\t "
                 << trimmer_trg
                 << L"\t "
-                << trimmer_left
-                << L"\t "
-                << trimmer_right<<endl;
+                << (trimmer_left == L"" ? L"ε" : trimmer_left)
+                << L"\t"
+                << (trimmer_right == L"" ? L"ε" : trimmer_right)
+                <<endl;
+          if(this_right == trimmer_left || label == epsilon_tag) 
+          {
+            wcerr<<L"vvv Trimmed after inserting: vvv"<<endl;
+            trimmed.show(show_should_probably_accept_const_a);
+            wcerr<<L"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"<<endl;
+          }
 #endif /* DEBUG */
         }
 
 #ifdef DEBUG
-        wcerr << this_src<<L"\t\t\t\t\t\t"<< trimmer_src <<L"\t marked as seen"<<endl;
+        wcerr << L""<<this_src<<L"\t\t\t\t\t\t"<< trimmer_src <<L" is seen"<<endl;
 #endif /* DEBUG */
         seen.insert(make_pair(this_src, trimmer_src));
       } // end loop live trimmer states
@@ -911,13 +922,15 @@ Transducer::intersect(Transducer &trimmer,
       it != limit;
       it++)
   {
+#ifdef DEBUG
+    wcerr << (*it)<<L" is final in this, insert into trimmed.finals: "<<states_this_trimmed[*it]<<endl;
+#endif /* DEBUG */
     trimmed.finals.insert(states_this_trimmed[*it]);
   }
 
 
 #ifdef DEBUG
-  wcerr << L"initial state: " << trimmed.getInitial()<<endl;
-  Alphabet show_should_probably_accept_const_a = this_a;
+  wcerr << L"Done trimming!\nInitial state: " << trimmed.getInitial()<<endl;
   trimmed.show(show_should_probably_accept_const_a);
   trimmed.wideConsoleErrorFinals();
   wcerr << L"trimmed.minimize();";
