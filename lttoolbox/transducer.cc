@@ -858,7 +858,7 @@ Transducer::intersect(Transducer &trimmer,
                 << L"\tis ";
 #endif /* DEBUG */
 
-          if(this_right == trimmer_left || this_label == epsilon_tag)
+          if(this_right == trimmer_left || this_label == epsilon_tag || trimmer_label == epsilon_tag)
           {
             if(seen.find(make_pair(this_trg, trimmer_trg)) == seen.end()) 
             {
@@ -892,7 +892,7 @@ Transducer::intersect(Transducer &trimmer,
                 << L"\t"
                 << (trimmer_right == L"" ? L"ε" : trimmer_right)
                 <<endl;
-          if(this_right == trimmer_left || this_label == epsilon_tag) 
+          if(this_right == trimmer_left || this_label == epsilon_tag || trimmer_label == epsilon_tag) 
           {
             wcerr<<L"vvv Trimmed after inserting: vvv"<<endl;
             trimmed.show(show_should_probably_accept_const_a);
