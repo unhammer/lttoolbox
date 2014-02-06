@@ -775,7 +775,6 @@ Transducer::intersect(Transducer &trimmer,
   Alphabet const &trimmer_a,
   int const epsilon_tag)
 {
-#define DEBUG
   joinFinals(epsilon_tag);
   /**
    * this ∩ trimmer = trimmed
@@ -874,13 +873,19 @@ Transducer::intersect(Transducer &trimmer,
             }
             else if(    this_right == L"<compound-only-L>"
                     ||  this_right == L"<compound-R>"
-                    || (this_right == L"" && trimmer_right != L"") )
+                    || (this_right == L"" && trimmer_left != L"") )
             {
-              trimmer_trg = trimmer_src; // stay put in the trimmer FST
+              // Stay put in the trimmer FST
+              trimmer_trg = trimmer_src;
             }
             if(trimmer_left == L"" && this_right != L"") 
             {
-              this_trg = this_src; // stay put in this FST
+              // Add a new live_trimmer_state from this_src, like
+              // staying put in this FST
+              SearchState next_from_src;
+              next_from_src.first = this_src;
+              next_from_src.second.insert(trimmer_trg);
+              todo.push_front(next_from_src);
             }
 
             if(seen.find(make_pair(this_trg, trimmer_trg)) == seen.end()) 
