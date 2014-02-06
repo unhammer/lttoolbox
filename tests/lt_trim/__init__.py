@@ -147,8 +147,8 @@ class TrimLongleft(unittest.TestCase, ProcTest):
             rmtree(tmpd)
 
 class BidixPardef(unittest.TestCase, ProcTest):
-    inputs = ["overgies"]
-    expectedOutputs = ["^overgies/overgi<vblex><inf><pass>$"]
+    inputs = ["c"]
+    expectedOutputs = ["^c/c<vblex><inf>$"]
     expectedRetCode = 0
 
     def runTest(self):

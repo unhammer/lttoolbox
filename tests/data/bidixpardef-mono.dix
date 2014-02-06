@@ -4,11 +4,10 @@
 	<sdefs>
 		<sdef n="vblex" c="Verb"/>
 		<sdef n="inf" 	c="Infinitive"/>
-		<sdef n="pass" 	c="Passive"/>
 	</sdefs>
 <pardefs>
 </pardefs>
 <section id="main" type="standard">
-  <e>       <p><l>overgies</l>       <r>overgi<s n="vblex"/><s n="inf"/><s n="pass"/></r></p></e>
+  <e>       <p><l>c</l>       <r>c<s n="vblex"/><s n="inf"/></r></p></e>
 </section>
 </dictionary>
