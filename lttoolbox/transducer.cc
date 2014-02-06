@@ -866,7 +866,10 @@ Transducer::intersect(Transducer &trimmer,
           {
             // Add a new live_trimmer_state from this_src, like
             // staying put in this FST
-            next_from_src.second.insert(trimmer_trg);
+            if(seen.find(make_pair(this_src, trimmer_trg)) == seen.end()) 
+            {
+              next_from_src.second.insert(trimmer_trg);
+            }
           }
           else if(   this_right == trimmer_left
                   || this_right == L"+" // TODO: use COMPILER_JOIN_ELEM from compiler.cc
