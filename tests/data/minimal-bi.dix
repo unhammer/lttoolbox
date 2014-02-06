@@ -15,4 +15,9 @@
   <e><p><l>y<s n="n"/></l><r>z<s n="n"/></r></p></e>
 </section>
 
+<section id="j" type="standard">
+  <e><p><l>j<s n="pr"/></l><r>j<s n="pr"/></r></p></e>
+  <e><p><l>g<s n="n"/></l><r>g<s n="n"/></r></p></e>
+</section>
+
 </dictionary>
