@@ -621,7 +621,7 @@ Transducer::reverse(int const epsilon_tag)
 void
 Transducer::show(Alphabet const &alphabet, FILE *output, int const epsilon_tag)
 {
-//  joinFinals(epsilon_tag);
+  joinFinals(epsilon_tag);
 
   map<int, multimap<int, int> > temporal;
 
@@ -910,17 +910,6 @@ Transducer::intersect(Transducer &trimmer,
                 << L"\t"
                 << (trimmer_right == L"" ? L"ε" : trimmer_right)
                 <<endl;
-          if(   this_right == trimmer_left
-             || this_right == L"+" // TODO: use COMPILER_JOIN_ELEM from compiler.cc
-             || this_right == L"<compound-only-L>" // TODO: use compoundOnlyLSymbol
-             || this_right == L"<compound-R>" // TODO: use compoundRSymbol
-             || this_right == L""             // epsilon
-             || trimmer_left == L"") 
-          {
-            wcerr<<L"vvv Trimmed after inserting: vvv"<<endl;
-            trimmed.show(show_should_probably_accept_const_a);
-            wcerr<<L"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"<<endl;
-          }
 #endif /* DEBUG */
         }
 
