@@ -231,3 +231,29 @@ class UnbalancedEpsilons(unittest.TestCase, ProcTest):
 
         finally:
             rmtree(tmpd)
+
+
+
+class Empty(unittest.TestCase, ProcTest):
+    def runTest(self):
+        tmpd = mkdtemp()
+        try:
+            self.assertEqual(0, call(["../lttoolbox/lt-comp",
+                                      "lr",
+                                      "data/empty-mono.dix",
+                                      tmpd+"/empty-mono.bin"],
+                                     stdout=PIPE))
+            self.assertEqual(0, call(["../lttoolbox/lt-comp",
+                                      "rl", # rl!
+                                      "data/empty-bi.dix",
+                                      tmpd+"/empty-bi.bin"],
+                                     stdout=PIPE))
+            self.assertEqual(1, call(["../lttoolbox/lt-trim",
+                                      tmpd+"/empty-mono.bin",
+                                      tmpd+"/empty-bi.bin",
+                                      tmpd+"/empty-trimmed.bin"],
+                                     stdout=PIPE,
+                                     stderr=PIPE))
+
+        finally:
+            rmtree(tmpd)
