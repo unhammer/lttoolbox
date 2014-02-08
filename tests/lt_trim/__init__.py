@@ -92,6 +92,13 @@ class UnbalancedEpsilons(unittest.TestCase, TrimProcTest):
     bidir = "rl"
     bidix = "data/unbalanced-epsilons-bi.dix"
 
+class Group(unittest.TestCase, TrimProcTest):
+    inputs = ["abc"]
+    expectedOutputs = ["^abc/ab<n><ind>#c$"]
+    expectedRetCode = 0
+    monodix = "data/group-mono.dix"
+    bidix = "data/group-bi.dix"
+
 
 class Empty(unittest.TestCase, TrimProcTest):
     def runTest(self):

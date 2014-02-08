@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dictionary>
+  <alphabet>ABCDEFGHIJKLMNOPQRSTUVWXYZÀÁÂÄÅÆÇÈÉÊËÍÑÒÓÔÕÖØÙÚÜČĐŊŠŦŽabcdefghijklmnopqrstuvwxyzàáâäåæçèéêëíñòóôõöøùúüčđŋšŧž­-</alphabet>
+  <sdefs>
+    <sdef n="n"/>
+    <sdef n="ind"/>
+  </sdefs>
+  <pardefs>
+  </pardefs>
+
+  <section id="main" type="standard">
+    <e><p><l>abc</l><r>ab<s n="n"/><s n="ind"/><g>c</g></r></p></e>
+  </section>
+
+</dictionary>
