@@ -308,7 +308,7 @@ Transducer::determinize(int const epsilon_tag)
   int initial_prima = 0;
   set<int> finals_prima;
 
-  if(finals.find(initial) != finals.end())
+  if(isFinal(initial))
   {
     finals_prima.insert(0);
   }
@@ -738,9 +738,6 @@ Transducer::unionWith(Alphabet &my_a,
   Transducer &t,
   int const epsilon_tag)
 {
-  /*int tmp = newState();
-  linkStates(tmp, initial, my_a(epsilon_tag, epsilon_tag));
-  initial = tmp;*/
   finals.insert(insertTransducer(initial, t, epsilon_tag));
 }
 
@@ -767,6 +764,127 @@ Transducer::appendDotStar(set<int> const &loopback_symbols, int const epsilon_ta
   }
 
   return prefix_transducer;
+}
+
+Transducer
+Transducer::copyWithTagsFirst(int start,
+                              Alphabet const &alphabet,
+                              int const epsilon_tag)
+{
+  Transducer new_t;
+
+  map<int, int> states_this_new;
+  states_this_new.insert(make_pair(initial, new_t.initial));
+
+  std::set<int> seen;
+  typedef std::pair<int, std::pair<Transducer, int> > SearchState;
+  // Each searchstate in the stack is a transition in this FST, along
+  // with a lemq-FST which is a completely linear transducer (ie. all
+  // states have at most one transition), as well an int representing
+  // the currently "last" state in the lemq.
+  std::list<SearchState> todo;
+  SearchState current;
+  while(todo.size() > 0) {
+    current = todo.front();
+    todo.pop_front();
+    int this_src = current.first;
+    Transducer lemq = current.second.first;
+    int lemq_last = current.second.second;
+
+    for(multimap<int, int>::iterator trans_it = transitions[this_src].begin(),
+          trans_limit = transitions[this_src].end();
+        trans_it != trans_limit;
+        trans_it++)
+    {
+      int label = trans_it->first,
+        this_trg = trans_it->second;
+      int left_symbol = alphabet.decode(label).first;
+      // TODO: Exit with error if tags appear when lemq.finals non-empty
+      if(alphabet.isTag(left_symbol))
+      {
+        int new_src = states_this_new[this_src];
+        if(states_this_new.find(this_trg) == states_this_new.end())
+        {
+          states_this_new.insert(make_pair(this_trg, new_t.newState()));
+        }
+        int new_trg = states_this_new[this_trg];
+        new_t.linkStates(new_src, label, new_trg);
+        if(lemq_last != 0)   // the first time we see a tag
+        {
+          lemq.finals.insert(lemq_last);
+        }
+        todo.push_front(make_pair(this_trg, make_pair(lemq, 0))); // 0 means we've seen a tag
+        if(isFinal(this_trg))
+        {
+          // TODO: how does this interact with appendDotStar?
+          new_t.insertTransducer(this_trg, lemq);
+        }
+      }
+      else
+      {
+        // We're still reading the lemq, append label to current one:
+        Transducer next_lemq = Transducer(lemq);
+        int lemq_trg = next_lemq.newState();
+        next_lemq.linkStates(lemq_last, label, lemq_trg);
+        todo.push_front(make_pair(this_trg, make_pair(next_lemq, lemq_trg)));
+      }
+    }
+  }
+  return new_t;
+}
+
+Transducer
+Transducer::moveLemqsLast(Alphabet const &alphabet,
+                          int const epsilon_tag)
+{
+  // TODO: These should be in file which is included by both
+  // fst_processor.cc and compiler.cc:
+  wstring COMPILER_GROUP_ELEM = L"#";
+
+  Transducer new_t;
+  std::set<int> seen;
+  std::list<int> todo;
+  todo.push_front(initial);
+
+  map<int, int> states_this_new;
+  states_this_new.insert(make_pair(initial, new_t.initial));
+
+  while(todo.size() > 0)
+  {
+    int this_src = todo.front();
+    todo.pop_front();
+    for(multimap<int, int>::iterator trans_it = transitions[this_src].begin(),
+          trans_limit = transitions[this_src].end();
+        trans_it != trans_limit;
+        trans_it++)
+    {
+      int label = trans_it->first,
+        this_trg = trans_it->second;
+      wstring left = L"";
+      alphabet.getSymbol(left, alphabet.decode(label).second);
+      if(left == L"#")
+      {
+        Transducer tagsFirst = copyWithTagsFirst(this_trg, alphabet, epsilon_tag);
+        new_t.insertTransducer(this_src, tagsFirst, epsilon_tag);
+      }
+      else
+      {
+        if(seen.find(this_trg) == seen.end()) 
+        {
+          todo.push_front(this_trg);
+        }
+        int new_src = states_this_new[this_src];
+        if(states_this_new.find(this_trg) == states_this_new.end())
+        {
+          states_this_new.insert(make_pair(this_trg, new_t.newState()));
+        }
+        int new_trg = states_this_new[this_trg];
+        new_t.linkStates(new_src, new_trg, label);
+      }
+      seen.insert(this_src);
+    }
+  }
+  return new_t;
 }
 
 Transducer
