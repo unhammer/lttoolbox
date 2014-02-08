@@ -131,18 +131,20 @@ trim(FILE *file_mono, FILE *file_bi)
   union_transducer.show(alph_prefix);
 #endif /* DEBUG */
 
-  Transducer prefix_transducer
-    = union_transducer.appendDotStar(loopback_symbols);
+  Transducer prefix_transducer = union_transducer.appendDotStar(loopback_symbols);
   // prefix_transducer should _not_ be minimized (both useless and takes forever)
 #ifdef DEBUG
   wcerr << L"prefixed union:"<<endl;
   prefix_transducer.show(alph_prefix);
 #endif /* DEBUG */
-  prefix_transducer = prefix_transducer.moveLemqsLast(alph_prefix);
+
+  wcerr << L"lemqmoving:"<<endl;
+  Transducer moved_transducer = prefix_transducer.moveLemqsLast(alph_prefix);
 #ifdef DEBUG
-  wcerr << L"prefixed and lemqmoved union:"<<endl;
-  prefix_transducer.show(alph_prefix);
+  wcerr << L"lemqmoved prefixed union:"<<endl;
+  moved_transducer.show(alph_prefix);
 #endif /* DEBUG */
+
 
   for(std::map<wstring, Transducer>::iterator it = trans_mono.begin(); it != trans_mono.end(); it++)
   {
@@ -204,7 +206,7 @@ int main(int argc, char *argv[])
 
   if(n_transitions==0) 
   {
-    wcerr << L"ERROR: Trimming gave empty transducer!" << endl;
+    wcerr << L"Error: Trimming gave empty transducer!" << endl;
     return 1;
   }
   else 
