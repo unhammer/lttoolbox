@@ -8,7 +8,7 @@
   </pardefs>
 
   <section id="main" type="standard">
-    <e><p><l>ab<g><b/>c</g><s n="n"/></l><r>feh<s n="n"/></r></p></e>
+    <e><p><l>ab<g>c</g><s n="n"/></l><r>feh<s n="n"/></r></p></e>
   </section>
 
 </dictionary>
