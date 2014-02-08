@@ -82,6 +82,7 @@ read_fst(FILE *bin_file)
 std::pair<std::pair<Alphabet, wstring>, std::map<wstring, Transducer> >
 trim(FILE *file_mono, FILE *file_bi)
 {
+#define DEBUG
   std::pair<std::pair<Alphabet, wstring>, std::map<wstring, Transducer> > alph_trans_mono = read_fst(file_mono);
   Alphabet alph_mono = alph_trans_mono.first.first;
   std::map<wstring, Transducer> trans_mono = alph_trans_mono.second;
@@ -132,10 +133,14 @@ trim(FILE *file_mono, FILE *file_bi)
 
   Transducer prefix_transducer
     = union_transducer.appendDotStar(loopback_symbols);
-  prefix_transducer = prefix_transducer.moveLemqsLast(alph_prefix);
   // prefix_transducer should _not_ be minimized (both useless and takes forever)
 #ifdef DEBUG
   wcerr << L"prefixed union:"<<endl;
+  prefix_transducer.show(alph_prefix);
+#endif /* DEBUG */
+  prefix_transducer = prefix_transducer.moveLemqsLast(alph_prefix);
+#ifdef DEBUG
+  wcerr << L"prefixed and lemqmoved union:"<<endl;
   prefix_transducer.show(alph_prefix);
 #endif /* DEBUG */
 
