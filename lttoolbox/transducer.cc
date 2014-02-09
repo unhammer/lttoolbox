@@ -779,6 +779,7 @@ Transducer::copyWithTagsFirst(int start,
   map<int, int> states_this_new;
   states_this_new.insert(make_pair(start, new_t.initial));
   map<int, int> states_this_lemq;
+  states_this_new.insert(make_pair(start, lemq.initial));
 
   typedef std::pair<int, int> SearchState;
   // Each searchstate in the stack is a transition in this FST, along
@@ -792,10 +793,11 @@ Transducer::copyWithTagsFirst(int start,
   while(todo.size() > 0) {
     current = todo.front();
     todo.pop_front();
+    seen.insert(current);
     int this_src = current.first;
     int this_lemqlast = current.second;
 
-    wcerr <<L"Popped "<<this_src<<L"\twith this_lemqlast:"<<this_lemqlast<<endl; lemq.show(show_should_probably_accept_const_a);
+    //wcerr <<L"Popped "<<this_src<<L","<<this_lemqlast<<L" and lemq:"<<endl; lemq.show(show_should_probably_accept_const_a);//wcerr<<endl;
     
     for(multimap<int, int>::iterator trans_it = transitions[this_src].begin(),
           trans_limit = transitions[this_src].end();
@@ -808,30 +810,31 @@ Transducer::copyWithTagsFirst(int start,
 
       wstring left = L"";
       alphabet.getSymbol(left, alphabet.decode(label).first);
-      wcerr << this_src <<L"\t"<<this_trg<<L"\t"<<left<<L"\t"<<endl;
+      //wcerr << this_src <<L"\t"<<this_trg<<L"\t"<<left<<L"\t";
       if(alphabet.isTag(left_symbol))
       {
         int new_src;
         if(this_src == this_lemqlast)
         {
+          // We've reached the first tag
           new_src = states_this_new[start];
+          lemq.finals.insert(this_lemqlast);
         }
         else
         {
           if(states_this_new.find(this_src) == states_this_new.end())
           {
-            wcerr <<L"making this_src in new_t, first tag state? "<<this_src<<endl;
+            //wcerr <<L"SHOULD NOT HAPPEN! making"<<this_src<<L" in new_t"<<endl;
             states_this_new.insert(make_pair(this_src, new_t.newState()));
           }
           new_src = states_this_new[this_src];
-          lemq.finals.insert(this_lemqlast);
         }
         if(states_this_new.find(this_trg) == states_this_new.end())
         {
           states_this_new.insert(make_pair(this_trg, new_t.newState()));
         }
         int new_trg = states_this_new[this_trg];
-        wcerr <<left <<L" is a tag, linking\t"<<this_src<<L","<<this_trg <<L" in new_t as "<<new_src<<L","<<new_trg<<endl;
+        //wcerr <<left <<L" is a tag, linking\t"<<this_src<<L","<<this_trg <<L" in new_t as "<<new_src<<L","<<new_trg<<endl;
         new_t.linkStates(new_src, new_trg, label);
 
         if(isFinal(this_src))
@@ -839,29 +842,30 @@ Transducer::copyWithTagsFirst(int start,
           finally.insert(make_pair(this_src, this_lemqlast));
         }
         
-
-        if(seen.find(make_pair(this_trg, this_lemqlast)) != seen.end())
+        if(seen.find(make_pair(this_trg, this_lemqlast)) == seen.end())
         {
+          //wcerr <<L"pushing "<<this_trg<<L","<<this_lemqlast<<endl;
           todo.push_front(make_pair(this_trg, this_lemqlast));
         }
       }
       else
       {
         // We're still reading the lemq, append label to current one:
-        int lemq_src = states_this_lemq[this_lemqlast];
+        int lemq_src = states_this_lemq[this_src];
         if(states_this_lemq.find(this_trg) == states_this_lemq.end())
         {
           states_this_lemq.insert(make_pair(this_trg, lemq.newState()));
         }
         int lemq_trg = states_this_lemq[this_trg];
         lemq.linkStates(lemq_src, lemq_trg, label);
-        if(seen.find(make_pair(this_trg, lemq_trg)) != seen.end())
+        //wcerr<<left <<L" is non-tag, linking "<<this_src<<L","<<this_trg<<L" in lemq as "<<lemq_src<<L","<<lemq_trg<<L" lemq now:"<<endl; lemq.show(show_should_probably_accept_const_a);
+        if(seen.find(make_pair(this_trg, this_trg)) == seen.end())
         {
-          todo.push_front(make_pair(this_trg, lemq_trg));
+          //wcerr <<L"pushing "<<this_trg<<L","<<this_trg<<endl;
+          todo.push_front(make_pair(this_trg, this_trg));
         }
       }
     }
-    seen.insert(make_pair(this_src, this_lemqlast));
   }
   
   for(set<SearchState>::iterator it = finally.begin(),
@@ -869,22 +873,26 @@ Transducer::copyWithTagsFirst(int start,
       it != limit;
       it++)
   {
-    int lasttag = it->first,
+    int last_tag = it->first,
       this_lemqlast = it->second;
     // copy lemq, letting this_lemqlast be the only final state in newlemq
     Transducer newlemq = Transducer(lemq); 
     newlemq.finals.clear();
     newlemq.finals.insert(states_this_lemq[this_lemqlast]);
     newlemq.minimize();
-    // append newlemq after finaltag:
+
+    int group_start = new_t.newState();
+    new_t.linkStates(states_this_new[last_tag], group_start, group_label);
+
+    // append newlemq into the group after last_tag:
     new_t.finals.insert(
-      new_t.insertTransducer(states_this_new[lasttag],
+      new_t.insertTransducer(group_start,
                              newlemq)
       );
   }
 
-  wcerr<<L"returning:" <<endl;
-  new_t.show(show_should_probably_accept_const_a);
+  //wcerr<<L"returning:" <<endl; new_t.show(show_should_probably_accept_const_a);
+  //wcerr <<endl;
 
   return new_t;
 }
@@ -910,6 +918,7 @@ Transducer::moveLemqsLast(Alphabet const &alphabet,
   {
     int this_src = todo.front();
     todo.pop_front();
+    seen.insert(this_src);
     for(multimap<int, int>::iterator trans_it = transitions[this_src].begin(),
           trans_limit = transitions[this_src].end();
         trans_it != trans_limit;
@@ -919,11 +928,8 @@ Transducer::moveLemqsLast(Alphabet const &alphabet,
         this_trg = trans_it->second;
       wstring left = L"";
       alphabet.getSymbol(left, alphabet.decode(label).first);
-      wcerr<<this_src << L"\t"<<this_trg << L"\t"<<left<<endl;
-      if(seen.find(this_trg) == seen.end()) 
-      {
-        todo.push_front(this_trg);
-      }
+      //wcerr<<this_src << L"\t"<<this_trg << L"\t"<<left<<endl;
+      int new_src = states_this_new[this_src];
       if(left == L"#")
       {
         Transducer tagsFirst = copyWithTagsFirst(this_trg, label, alphabet, epsilon_tag);
@@ -933,15 +939,17 @@ Transducer::moveLemqsLast(Alphabet const &alphabet,
       }
       else
       {
-        int new_src = states_this_new[this_src];
         if(states_this_new.find(this_trg) == states_this_new.end())
         {
           states_this_new.insert(make_pair(this_trg, new_t.newState()));
         }
         int new_trg = states_this_new[this_trg];
         new_t.linkStates(new_src, new_trg, label);
+        if(seen.find(this_trg) == seen.end()) 
+        {
+          todo.push_front(this_trg);
+        }
       }
-      seen.insert(this_src);
     }
   }
   return new_t;
@@ -953,7 +961,7 @@ Transducer::intersect(Transducer &trimmer,
   Alphabet const &trimmer_a,
   int const epsilon_tag)
 {
-#define DEBUG
+//#define DEBUG
   joinFinals(epsilon_tag);
   /**
    * this ∩ trimmer = trimmed
