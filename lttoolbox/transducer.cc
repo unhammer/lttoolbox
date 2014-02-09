@@ -773,7 +773,6 @@ Transducer::copyWithTagsFirst(int start,
                               Alphabet const &alphabet,
                               int const epsilon_tag)
 {
-  Alphabet show_should_probably_accept_const_a = alphabet;
   Transducer new_t;
   Transducer lemq;
 
@@ -795,21 +794,16 @@ Transducer::copyWithTagsFirst(int start,
     current = todo.front();
     todo.pop_front();
     seen.insert(current);
-    int this_src = current.first;
-    int this_lemqlast = current.second;
+    int this_src = current.first, this_lemqlast = current.second;
 
-    
     for(multimap<int, int>::iterator trans_it = transitions[this_src].begin(),
           trans_limit = transitions[this_src].end();
         trans_it != trans_limit;
         trans_it++)
     {
-      int label = trans_it->first,
-        this_trg = trans_it->second;
+      int label = trans_it->first, this_trg = trans_it->second;
       int left_symbol = alphabet.decode(label).first;
 
-      wstring left = L"";
-      alphabet.getSymbol(left, alphabet.decode(label).first);
       if(alphabet.isTag(left_symbol))
       {
         int new_src;
@@ -827,6 +821,7 @@ Transducer::copyWithTagsFirst(int start,
           }
           new_src = states_this_new[this_src];
         }
+
         if(states_this_new.find(this_trg) == states_this_new.end())
         {
           states_this_new.insert(make_pair(this_trg, new_t.newState()));
@@ -862,8 +857,7 @@ Transducer::copyWithTagsFirst(int start,
     }
   }
   
-  for(set<SearchState>::iterator it = finally.begin(),
-        limit = finally.end();
+  for(set<SearchState>::iterator it = finally.begin(), limit = finally.end();
       it != limit;
       it++)
   {
