@@ -1053,7 +1053,7 @@ Transducer::intersect(Transducer &trimmer,
                   || this_right == L""             // epsilon
             )
           {
-            if(this_right == L"+")
+            if(this_right == COMPILER_JOIN_ELEM)
             {
               trimmer_trg = trimmer.initial;
             }
