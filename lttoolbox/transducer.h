@@ -279,6 +279,7 @@ public:
   /**
    * Insert another transducer into this, unifying source and targets.
    * Does not minimize.
+   *
    * @param t the transducer being inserted
    * @param epsilon_tag the epsilon tag
    */
@@ -287,7 +288,13 @@ public:
     int const epsilon_tag = 0); 
 
   /**
-   * Converts this class into a prefix transducer
+   * Converts this class into a "prefix transducer", ie. for any final
+   * state, appends a transition to itself for all of the loopback
+   * symbols (typically all tags). So if the original transducer
+   * accepts "foo<tag1>" and loopback_symbols includes <tag2>, the
+   * prefix transducer will accept "foo<tag1><tag2>" as well as
+   * "foo<tag1>".
+   *
    * @param loopback_symbols a set of symbols of the alphabet for this class,
    *   all of the input and output tags of which are set equal
    * @param epsilon_tag the tag to take as epsilon
