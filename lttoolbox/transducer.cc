@@ -26,6 +26,7 @@
 #include <iostream>
 #include <vector>
 
+//#define DEBUG
 
 int
 Transducer::newState()
@@ -797,7 +798,6 @@ Transducer::copyWithTagsFirst(int start,
     int this_src = current.first;
     int this_lemqlast = current.second;
 
-    //wcerr <<L"Popped "<<this_src<<L","<<this_lemqlast<<L" and lemq:"<<endl; lemq.show(show_should_probably_accept_const_a);//wcerr<<endl;
     
     for(multimap<int, int>::iterator trans_it = transitions[this_src].begin(),
           trans_limit = transitions[this_src].end();
@@ -810,7 +810,6 @@ Transducer::copyWithTagsFirst(int start,
 
       wstring left = L"";
       alphabet.getSymbol(left, alphabet.decode(label).first);
-      //wcerr << this_src <<L"\t"<<this_trg<<L"\t"<<left<<L"\t";
       if(alphabet.isTag(left_symbol))
       {
         int new_src;
@@ -824,7 +823,6 @@ Transducer::copyWithTagsFirst(int start,
         {
           if(states_this_new.find(this_src) == states_this_new.end())
           {
-            //wcerr <<L"SHOULD NOT HAPPEN! making"<<this_src<<L" in new_t"<<endl;
             states_this_new.insert(make_pair(this_src, new_t.newState()));
           }
           new_src = states_this_new[this_src];
@@ -834,7 +832,6 @@ Transducer::copyWithTagsFirst(int start,
           states_this_new.insert(make_pair(this_trg, new_t.newState()));
         }
         int new_trg = states_this_new[this_trg];
-        //wcerr <<left <<L" is a tag, linking\t"<<this_src<<L","<<this_trg <<L" in new_t as "<<new_src<<L","<<new_trg<<endl;
         new_t.linkStates(new_src, new_trg, label);
 
         if(isFinal(this_src))
@@ -844,7 +841,6 @@ Transducer::copyWithTagsFirst(int start,
         
         if(seen.find(make_pair(this_trg, this_lemqlast)) == seen.end())
         {
-          //wcerr <<L"pushing "<<this_trg<<L","<<this_lemqlast<<endl;
           todo.push_front(make_pair(this_trg, this_lemqlast));
         }
       }
@@ -858,10 +854,8 @@ Transducer::copyWithTagsFirst(int start,
         }
         int lemq_trg = states_this_lemq[this_trg];
         lemq.linkStates(lemq_src, lemq_trg, label);
-        //wcerr<<left <<L" is non-tag, linking "<<this_src<<L","<<this_trg<<L" in lemq as "<<lemq_src<<L","<<lemq_trg<<L" lemq now:"<<endl; lemq.show(show_should_probably_accept_const_a);
         if(seen.find(make_pair(this_trg, this_trg)) == seen.end())
         {
-          //wcerr <<L"pushing "<<this_trg<<L","<<this_trg<<endl;
           todo.push_front(make_pair(this_trg, this_trg));
         }
       }
@@ -891,8 +885,6 @@ Transducer::copyWithTagsFirst(int start,
       );
   }
 
-  //wcerr<<L"returning:" <<endl; new_t.show(show_should_probably_accept_const_a);
-  //wcerr <<endl;
 
   return new_t;
 }
@@ -934,7 +926,7 @@ Transducer::moveLemqsLast(Alphabet const &alphabet,
       {
         Transducer tagsFirst = copyWithTagsFirst(this_trg, label, alphabet, epsilon_tag);
         new_t.finals.insert(
-          new_t.insertTransducer(this_src, tagsFirst, epsilon_tag)
+          new_t.insertTransducer(new_src, tagsFirst, epsilon_tag)
           );
       }
       else
@@ -955,13 +947,13 @@ Transducer::moveLemqsLast(Alphabet const &alphabet,
   return new_t;
 }
 
+
 Transducer
 Transducer::intersect(Transducer &trimmer,
   Alphabet const &this_a,
   Alphabet const &trimmer_a,
   int const epsilon_tag)
 {
-//#define DEBUG
   joinFinals(epsilon_tag);
   /**
    * this ∩ trimmer = trimmed
@@ -1129,7 +1121,7 @@ Transducer::intersect(Transducer &trimmer,
     } // end loop arcs from this_src
   } // end while todo
 
-
+  // TODO: do we check that we've reached a trimmer.final state?
   for(set<int>::iterator it = finals.begin(),
         limit = finals.end();
       it != limit;
