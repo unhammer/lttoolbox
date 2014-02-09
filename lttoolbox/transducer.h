@@ -296,8 +296,38 @@ public:
   Transducer appendDotStar(set<int> const &loopback_symbols,
                            int const epsilon_tag = 0);
 
+
+  /**
+   * Turn "foo# bar<tag1><tag2>" into "foo<tag1><tag2># bar". Only
+   * regards the input (left) side, output side will be in wrong
+   * order. Used on bidixes when trimming.
+   *
+   * @param alphabet the alphabet of this transducer, also used for returned Transducer
+   * @param epsilon_tag the tag to take as epsilon
+   * @return the prefix transducer
+   */
+  Transducer moveLemqsLast(Alphabet const &alphabet,
+                           int const epsilon_tag = 0);
+  /**
+   * Helper for moveLemqsLast. Starting from a certain state, make all
+   * the tags go before the non-tags, so if " bar<tag1><tag2>" is a
+   * posible path, we get "<tag1><tag2> bar" in the returned
+   * transducer.
+   *
+   * @param start the state (in this Transducer) to start from
+   * @param group_label the label of the "#" symbol we saw
+   * @param alphabet the alphabet of this transducer
+   * @param epsilon_tag the tag to take as epsilon
+   * @return a transducer of all paths going from start, but with tags first.
+   */
+  Transducer copyWithTagsFirst(int start,
+                               int group_label,
+                               Alphabet const &alphabet,
+                               int const epsilon_tag = 0);
+
   /**
    * Intersects two finite-state transducers
+   *
    * @param t the Transducer with which this class is intersected
    * @param my_a the alphabet of this transducer
    * @param t_a the alphabet of the transducer t
@@ -308,7 +338,6 @@ public:
                        Alphabet const &t_a,
                        int const epsilon_tag = 0);
 
-  void wideConsoleErrorFinals();
 };
 
 #endif
