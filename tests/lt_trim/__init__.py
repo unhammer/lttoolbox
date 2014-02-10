@@ -106,6 +106,13 @@ class Group(unittest.TestCase, TrimProcTest):
     monodix = "data/group-mono.dix"
     bidix = "data/group-bi.dix"
 
+class BothJoinAndGroup(unittest.TestCase, TrimProcTest):
+    inputs = ["jkl", "jkm", "jnl"]
+    expectedOutputs = ["^jkl/j<n><ind>+k<n><ind>#l$", "^jkm/*jkm$", "^jnl/*jnl$"]
+    expectedRetCode = 0
+    monodix = "data/group-mono.dix"
+    bidix = "data/group-bi.dix"
+
 
 class Empty(unittest.TestCase, TrimProcTest):
     def runTest(self):
