@@ -622,8 +622,9 @@ Transducer::reverse(int const epsilon_tag)
 void
 Transducer::show(Alphabet const &alphabet, FILE *output, int const epsilon_tag)
 {
-//  joinFinals(epsilon_tag);
-
+#ifndef DEBUG
+  joinFinals(epsilon_tag);
+#endif
   map<int, multimap<int, int> > temporal;
 
   for(map<int, multimap<int, int> >::iterator it = transitions.begin(); it != transitions.end(); it++)
@@ -804,7 +805,11 @@ Transducer::copyWithTagsFirst(int start,
       int label = trans_it->first, this_trg = trans_it->second;
       int left_symbol = alphabet.decode(label).first;
 
-      if(alphabet.isTag(left_symbol))
+      // After the first tag, we can either have more tags, or
+      // epsilons (0), in which case the lemqlast state is already set
+      // to something other than this_src:
+      if(alphabet.isTag(left_symbol)
+         || (left_symbol == 0 && this_src != this_lemqlast))
       {
         int new_src;
         if(this_src == this_lemqlast)
@@ -854,8 +859,8 @@ Transducer::copyWithTagsFirst(int start,
           todo.push_front(make_pair(this_trg, this_trg));
         }
       }
-    }
-  }
+    } // end for transitions
+  } // end while todo
   
   for(set<SearchState>::iterator it = finally.begin(), limit = finally.end();
       it != limit;
@@ -878,7 +883,6 @@ Transducer::copyWithTagsFirst(int start,
                              newlemq)
       );
   }
-
 
   return new_t;
 }
@@ -911,11 +915,11 @@ Transducer::moveLemqsLast(Alphabet const &alphabet,
         trans_it++)
     {
       int label = trans_it->first,
-        this_trg = trans_it->second;
+       this_trg = trans_it->second;
       wstring left = L"";
       alphabet.getSymbol(left, alphabet.decode(label).first);
-      //wcerr<<this_src << L"\t"<<this_trg << L"\t"<<left<<endl;
       int new_src = states_this_new[this_src];
+
       if(left == L"#")
       {
         Transducer tagsFirst = copyWithTagsFirst(this_trg, label, alphabet, epsilon_tag);
@@ -938,6 +942,7 @@ Transducer::moveLemqsLast(Alphabet const &alphabet,
       }
     }
   }
+
   return new_t;
 }
 
@@ -966,8 +971,6 @@ Transducer::intersect(Transducer &trimmer,
   Transducer trimmed;
   map<int, int> states_this_trimmed;
   states_this_trimmed.insert(make_pair(initial, trimmed.initial));
-
-  Alphabet show_should_probably_accept_const_a = this_a;
 
   typedef std::pair<int, std::pair<int, int > > SearchState;
   // first: currently searched state in this; 
@@ -1107,7 +1110,7 @@ Transducer::intersect(Transducer &trimmer,
 
 #ifdef DEBUG
   wcerr << L"Done trimming!\nInitial state: " << trimmed.getInitial()<<endl;
-  trimmed.show(show_should_probably_accept_const_a);
+  trimmed.show(this_a);
   wcerr << L"running trimmed.minimize() ...";
 #endif /* DEBUG */
 
