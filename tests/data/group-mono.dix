@@ -4,6 +4,9 @@
   <sdefs>
     <sdef n="n"/>
     <sdef n="ind"/>
+    <sdef n="f"/>
+    <sdef n="pl"/>
+    <sdef n="sg"/>
   </sdefs>
   <pardefs>
   </pardefs>
@@ -15,6 +18,8 @@
     <e><p><l>pqr</l> <r>pq<s n="n"/><s n="ind"/><g>r</g></r></p></e>
 
     <e><p><l>jkl</l> <r>j<s n="n"/><s n="ind"/><j/>k<s n="n"/><s n="ind"/><g>l</g></r></p></e>
+
+    <e><p><l>de</l><r>de<s n="n"/><s n="f"/><s n="sg"/><g>f</g></r></p></e>
 
     <!-- Should not be included: -->
     <e><p><l>pqs</l> <r>pq<s n="n"/><s n="ind"/><g>s</g></r></p></e>
