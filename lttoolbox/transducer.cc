@@ -960,8 +960,6 @@ Transducer::intersect(Transducer &trimmer,
   wstring compoundOnlyLSymbol = L"<compound-only-L>";
   wstring compoundRSymbol = L"<compound-R>";
   wstring COMPILER_JOIN_ELEM = L"+";
-  // TODO: What to do about <g/>? Currently, "a<n># b" is added if
-  // "a<n>" is in trimmer.
 
   // State numbers may differ in this transducer and the trimmed:
   Transducer trimmed;
@@ -970,23 +968,23 @@ Transducer::intersect(Transducer &trimmer,
 
   Alphabet show_should_probably_accept_const_a = this_a;
 
-  // first: currently searched state in this; second: current live states in trimmer
-  typedef std::pair<int, set<int> > SearchState;
+  // first: currently searched state in this; second: a matched state in trimmer
+  // (when several match trimmer-states match, we just get several pairs)
+  typedef std::pair<int, int > SearchState;
 
   std::list<SearchState> todo;
-  std::set<std::pair<int, int> > seen;
-  
+  std::set<SearchState> seen;
   SearchState current;
-  current.first = initial;
-  current.second.insert(trimmer.initial);
-  todo.push_front(current);
+  todo.push_front(make_pair(initial, trimmer.initial));
 
   while(todo.size() > 0)
   {
     current = todo.front();
     todo.pop_front();
-    int this_src = current.first;
-    set<int> live_trimmer_states = current.second;
+    int  this_src = current.first,
+      trimmer_src = current.second;
+    seen.insert(make_pair(this_src, trimmer_src));
+
     // Loop through arcs from this_src; when our arc matches an arc
     // from live_trimmer_states, add that to (the front of) todo:
     for(multimap<int, int>::iterator trans_it = transitions[this_src].begin(),
@@ -995,122 +993,75 @@ Transducer::intersect(Transducer &trimmer,
         trans_it++)
     {
       int this_label = trans_it->first,
-          this_trg   = trans_it->second;
-      SearchState next, next_from_src;
-      // Loop through live states in our trimmer transducer:
-      for(set<int>::iterator trimmer_state_it = live_trimmer_states.begin(),
-                             trimmer_state_limit = live_trimmer_states.end();
-          trimmer_state_it != trimmer_state_limit;
-          trimmer_state_it++)
-      {
-        int trimmer_src = (*trimmer_state_it);
-        // Loop through arcs from each live state of trimmer:
-        for(multimap<int, int>::iterator trimmer_trans_it
-            = trimmer.transitions.at(trimmer_src).begin(),
-                                         trimmer_trans_limit
-            = trimmer.transitions.at(trimmer_src).end();
+         this_trg   = trans_it->second;
+
+      // Loop through arcs from the live state of trimmer:
+      for(multimap<int, int>::iterator trimmer_trans_it = trimmer.transitions.at(trimmer_src).begin(),
+            trimmer_trans_limit = trimmer.transitions.at(trimmer_src).end();
           trimmer_trans_it != trimmer_trans_limit;
           trimmer_trans_it++)
+      {
+        int trimmer_label = trimmer_trans_it->first,
+            trimmer_trg   = trimmer_trans_it->second;
+        wstring this_right = L"",
+              trimmer_left = L"";
+        this_a.getSymbol(this_right,
+                         this_a.decode(this_label).second);
+        trimmer_a.getSymbol(trimmer_left,
+                            trimmer_a.decode(trimmer_label).first);
+#ifdef DEBUG
+        wcerr << this_src << L"\t" << this_trg << L"\t" << L"\t" << (this_right == L"" ? L"ε" : this_right) << L"\tis ";
+#endif /* DEBUG */
+
+        if(trimmer_left == L"" && this_right != L"") 
         {
-          int trimmer_label = trimmer_trans_it->first,
-              trimmer_trg   = trimmer_trans_it->second;
-          wstring this_right = L"",
-                  trimmer_left = L"";
-          this_a.getSymbol(this_right,
-                           this_a.decode(this_label).second);
-          trimmer_a.getSymbol(trimmer_left,
-                              trimmer_a.decode(trimmer_label).first);
-#ifdef DEBUG
-          wstring this_left = L"",
-                  trimmer_right = L"";
-          this_a.getSymbol(this_left, this_a.decode(this_label).first);
-          trimmer_a.getSymbol(trimmer_right,
-                              trimmer_a.decode(trimmer_label).second);
-          wcerr << this_src
-                << L"\t"
-                << this_trg
-                << L"\t"
-                << (this_left == L"" ? L"ε" : this_left)
-                << L"\t"
-                << (this_right == L"" ? L"ε" : this_right)
-                << L"\tis ";
-#endif /* DEBUG */
-
-
-          if(trimmer_left == L"" && this_right != L"") 
+          // Add a new live_trimmer_state from this_src, like
+          // staying put in this FST
+          if(seen.find(make_pair(this_src, trimmer_trg)) == seen.end()) 
           {
-            // Add a new live_trimmer_state from this_src, like
-            // staying put in this FST
-            if(seen.find(make_pair(this_src, trimmer_trg)) == seen.end()) 
-            {
-              next_from_src.second.insert(trimmer_trg);
-            }
+            todo.push_front(make_pair(this_src, trimmer_trg));
           }
-          else if(   this_right == trimmer_left
-                  || this_right == COMPILER_JOIN_ELEM
-                  || this_right == compoundOnlyLSymbol
-                  || this_right == compoundRSymbol
-                  || this_right == L""             // epsilon
-            )
+        }
+        else if(   this_right == trimmer_left
+                   || this_right == COMPILER_JOIN_ELEM
+                   || this_right == compoundOnlyLSymbol
+                   || this_right == compoundRSymbol
+                   || this_right == L""             // epsilon
+          )
+        {
+          if(this_right == COMPILER_JOIN_ELEM)
           {
-            if(this_right == COMPILER_JOIN_ELEM)
-            {
-              trimmer_trg = trimmer.initial;
-            }
-            else if(    this_right == compoundOnlyLSymbol
-                    ||  this_right == compoundRSymbol
-                    || (this_right == L"" && trimmer_left != L"") )
-            {
-              // Stay put in the trimmer FST
-              trimmer_trg = trimmer_src;
-            }
+            trimmer_trg = trimmer.initial;
+          }
+          else if(    this_right == compoundOnlyLSymbol
+                      ||  this_right == compoundRSymbol
+                      || (this_right == L"" && trimmer_left != L"") )
+          {
+            // Stay put in the trimmer FST
+            trimmer_trg = trimmer_src;
+          }
 
-            if(seen.find(make_pair(this_trg, trimmer_trg)) == seen.end()) 
-            {
-              next.second.insert(trimmer_trg);
-            }
-            int trimmed_src = states_this_trimmed[this_src];
-            if(states_this_trimmed.find(this_trg) == states_this_trimmed.end())
-            {
-              states_this_trimmed.insert(make_pair(this_trg, trimmed.newState()));
-            }
-            int trimmed_trg = states_this_trimmed[this_trg];
-            trimmed.linkStates(trimmed_src, // fromState
-                               trimmed_trg, // toState
-                               this_label); // symbol-pair, using this alphabet
-#ifdef DEBUG
-            wcerr << L"    ";
-#endif /* DEBUG */
-          }
-#ifdef DEBUG
-          else
+          if(seen.find(make_pair(this_trg, trimmer_trg)) == seen.end()) 
           {
-            wcerr << L"not ";
+            todo.push_front(make_pair(this_trg, trimmer_trg));
           }
-          wcerr << L"equal to\t"
-                << trimmer_src
-                << L"\t "
-                << trimmer_trg
-                << L"\t "
-                << (trimmer_left == L"" ? L"ε" : trimmer_left)
-                << L"\t"
-                << (trimmer_right == L"" ? L"ε" : trimmer_right)
-                <<endl;
+          int trimmed_src = states_this_trimmed[this_src];
+          if(states_this_trimmed.find(this_trg) == states_this_trimmed.end())
+          {
+            states_this_trimmed.insert(make_pair(this_trg, trimmed.newState()));
+          }
+          int trimmed_trg = states_this_trimmed[this_trg];
+          trimmed.linkStates(trimmed_src, // fromState
+                             trimmed_trg, // toState
+                             this_label); // symbol-pair, using this alphabet
+#ifdef DEBUG
+          wcerr << L"    ";
 #endif /* DEBUG */
         }
-
-        seen.insert(make_pair(this_src, trimmer_src));
-      } // end loop live trimmer states
-
-      if(next_from_src.second.size() > 0)
-      {
-        next_from_src.first = this_src;
-        todo.push_front(next_from_src);
-      }
-      if(next.second.size() > 0)
-      {
-        next.first = this_trg;
-        todo.push_front(next);
+#ifdef DEBUG
+        else { wcerr << L"not "; }
+        wcerr << L"equal to\t" << trimmer_src << L"\t " << trimmer_trg << L"\t " << (trimmer_left == L"" ? L"ε" : trimmer_left) <<endl;
+#endif /* DEBUG */
       }
     } // end loop arcs from this_src
   } // end while todo
@@ -1123,7 +1074,6 @@ Transducer::intersect(Transducer &trimmer,
   {
     trimmed.finals.insert(states_this_trimmed[*it]);
   }
-
 
 #ifdef DEBUG
   wcerr << L"Done trimming!\nInitial state: " << trimmed.getInitial()<<endl;
