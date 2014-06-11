@@ -47,10 +47,11 @@ wstring const Compiler::COMPILER_S_ELEM             = L"s";
 wstring const Compiler::COMPILER_REGEXP_ELEM        = L"re";
 wstring const Compiler::COMPILER_SECTION_ELEM       = L"section";
 wstring const Compiler::COMPILER_ID_ATTR            = L"id";
-wstring const Compiler::COMPILER_TYPE_ATTR	    = L"type";
+wstring const Compiler::COMPILER_TYPE_ATTR	        = L"type";
+wstring const Compiler::COMPILER_CASEFOLD_ATTR	    = L"casefold";
 wstring const Compiler::COMPILER_IDENTITY_ELEM      = L"i";
-wstring const Compiler::COMPILER_JOIN_ELEM	    = L"j";
-wstring const Compiler::COMPILER_BLANK_ELEM	    = L"b";
+wstring const Compiler::COMPILER_JOIN_ELEM	        = L"j";
+wstring const Compiler::COMPILER_BLANK_ELEM	        = L"b";
 wstring const Compiler::COMPILER_POSTGENERATOR_ELEM = L"a";
 wstring const Compiler::COMPILER_GROUP_ELEM         = L"g";
 wstring const Compiler::COMPILER_LEMMA_ATTR         = L"lm";
@@ -638,15 +639,26 @@ Compiler::procSection()
   {
     wstring const &id = attrib(COMPILER_ID_ATTR);
     wstring const &type = attrib(COMPILER_TYPE_ATTR);
+    wstring const &casefold = attrib(COMPILER_CASEFOLD_ATTR);
     requireAttribute(id, COMPILER_ID_ATTR, COMPILER_SECTION_ELEM);
     requireAttribute(type, COMPILER_TYPE_ATTR, COMPILER_SECTION_ELEM);
     
+    if(casefold == L"true") {
+      casefold_current_section = true;
+    }
+    else
+    {
+      casefold_current_section = false;
+    }
+
     current_section = id;
     current_section += L"@";
     current_section.append(type);
   }
   else
   {
+    wcerr <<L"done with section " <<current_section<<L" casefold: "<<casefold_current_section<<endl;
+
     current_section = L"";
   }
 }

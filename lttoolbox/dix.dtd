@@ -59,6 +59,7 @@
 <!ATTLIST section
 	id ID #REQUIRED
 	type (standard|inconditional|postblank|preblank) #REQUIRED
+	casefold (true|false) #IMPLIED
 	
 >
 	<!-- id: dictionary section identifier -->

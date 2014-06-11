@@ -115,6 +115,14 @@
         <value>preblank</value>
       </choice>
     </attribute>
+    <optional>
+      <attribute name="casefold">
+        <choice>
+          <value>true</value>
+          <value>false</value>
+        </choice>
+      </attribute>
+    </optional>
   </define>
   <!-- id: dictionary section identifier -->
   <!-- type: dictionary section type -->

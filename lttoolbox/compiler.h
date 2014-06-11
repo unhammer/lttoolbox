@@ -74,6 +74,11 @@ private:
   wstring current_section;
   
   /**
+   * Whether to casefold the current section
+   */
+  bool casefold_current_section;
+  
+  /**
    * The direction of the compilation, 'lr' (left-to-right) or 'rl'
    * (right-to-left)
    */
@@ -105,7 +110,7 @@ private:
   map<wstring, Transducer, Ltstr> paradigms;
   
   /**
-   * List of named dictionary sections
+   * List of named dictionary sections; the bool is for casefolding
    */
   map<wstring, Transducer, Ltstr> sections;
   
@@ -286,6 +291,7 @@ public:
   static wstring const COMPILER_SECTION_ELEM;
   static wstring const COMPILER_ID_ATTR;
   static wstring const COMPILER_TYPE_ATTR;
+  static wstring const COMPILER_CASEFOLD_ATTR;
   static wstring const COMPILER_IDENTITY_ELEM;
   static wstring const COMPILER_JOIN_ELEM;
   static wstring const COMPILER_BLANK_ELEM;
