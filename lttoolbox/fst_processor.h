@@ -64,9 +64,19 @@ private:
   State *current_state;
 
   /**
+   * Current state of lexical analysis for possible samecase section
+   */
+  State *current_state_samecase;
+
+  /**
    * Initial state of every token
    */
   State *initial_state;
+
+  /**
+   * Initial state of every token for possible samecase section
+   */
+  State *initial_state_state;
 
   /**
    * Set of final states of inconditional sections in the dictionaries
@@ -127,6 +137,11 @@ private:
    * Begin of the transducer
    */
   Node root;
+
+  /**
+   * Begin of the transducer for possible samecase section
+   */
+  Node root_samecase;
 
   /**
    * true if the position of input stream is out of a word

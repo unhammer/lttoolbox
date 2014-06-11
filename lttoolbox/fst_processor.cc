@@ -55,12 +55,16 @@ FSTProcessor::FSTProcessor()
 
   initial_state = new State();
   current_state = new State();
+  initial_state_samecase = new State();
+  current_state_samecase = new State();
 }
 
 FSTProcessor::~FSTProcessor()
 {
   delete current_state;
   delete initial_state;
+  delete current_state_samecase;
+  delete initial_state_samecase;
 }
 
 void
@@ -521,10 +525,16 @@ FSTProcessor::calcInitial()
                                              limit = transducers.end();
       it != limit; it++)
   {
-    root.addTransition(0, 0, it->second.getInitial());
+    if(endsWith(it->first, L"@samecase")) {
+      root_samecase.addTransition(0, 0, it->second.getInitial());
+    }
+    else {
+      root.addTransition(0, 0, it->second.getInitial());
+    }
   }
 
   initial_state->init(&root);
+  initial_state_samecase->init(&root_samecase);
 }
 
 bool
@@ -772,14 +782,16 @@ FSTProcessor::compoundAnalysis(wstring input_word, bool uppercase, bool firstupp
     //wcerr << L"compoundAnalysis(input_word = " << input_word << L")" << endl;
 
     State current_state = *initial_state;
+    State current_state_samecase = *initial_state_samecase;
 
     for(unsigned int i=0; i<input_word.size(); i++) {
         wchar_t val=input_word.at(i);
 
         //wcerr << val << L" før step " << i << L" current_state = " << current_state.getReadableString(alphabet) << endl;
         current_state.step_case(val, caseSensitive);
+        current_state_samecase.step(val);
         
-        if(current_state.size() > MAX_COMBINATIONS) {
+        if(current_state.size() > MAX_COMBINATIONS || current_state_samecase.size() > MAX_COMBINATIONS) {
             wcerr << L"Warning: compoundAnalysis's MAX_COMBINATIONS exceeded for '" << input_word << L"'" << endl;
             wcerr << L"         gave up at char " << i << L" '" << val << L"'." << endl;
 
@@ -789,20 +801,23 @@ FSTProcessor::compoundAnalysis(wstring input_word, bool uppercase, bool firstupp
 
         //wcerr << val << L" eft step " << i << L" current_state = " << current_state.getReadableString(alphabet) << endl;
 
-        if(i < input_word.size()-1)
+        if(i < input_word.size()-1) {
             current_state.restartFinals(all_finals, compoundOnlyLSymbol, initial_state, '+');
+            current_state_samecase.restartFinals(all_finals, compoundOnlyLSymbol, initial_state, '+');
+        }
         
         //wcerr << val << " eft rest " << i << " current_state = " << current_state.getReadableString(alphabet) << endl;
         //wcerr << i << " result = "  << current_state.filterFinals(all_finals, alphabet, escaped_chars, uppercase, firstupper) << endl;
         //wcerr << i << " -- size = " << current_state.size() << endl;
 
-        if(current_state.size()==0) {
+        if(current_state.size()==0 && current_state_samecase.size()==0) {
             wstring nullString = L"";
             return nullString;
         }
     }
 
     current_state.pruneCompounds(compoundRSymbol, '+', compound_max_elements);
+    current_state_samecase.pruneCompounds(compoundRSymbol, '+', compound_max_elements);
     wstring result = current_state.filterFinals(all_finals, alphabet, escaped_chars, uppercase, firstupper);
     //wcerr << L"rrresult = " << result << endl;
     
