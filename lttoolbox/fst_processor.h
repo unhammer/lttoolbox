@@ -89,7 +89,12 @@ private:
   set<Node *> preblank;
 
   /**
-   * Merge of 'inconditional', 'standard', 'postblank' and 'preblank' sets
+   * Set of final states of samecase sections in the dictionaries
+   */
+  set<Node *> samecase;
+
+  /**
+   * Merge of 'inconditional', 'standard', 'postblank', 'preblank' and 'samecase' sets
    */
   set<Node *> all_finals;
 

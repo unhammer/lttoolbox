@@ -567,6 +567,11 @@ FSTProcessor::classifyFinals()
       preblank.insert(it->second.getFinals().begin(),
                        it->second.getFinals().end());
     }
+    else if(endsWith(it->first, L"@samecase"))
+    {
+      samecase.insert(it->second.getFinals().begin(),
+                      it->second.getFinals().end());
+    }
     else
     {
       wcerr << L"Error: Unsupported transducer type for '";
@@ -718,6 +723,7 @@ FSTProcessor::initAnalysis()
   all_finals.insert(inconditional.begin(), inconditional.end());
   all_finals.insert(postblank.begin(), postblank.end());
   all_finals.insert(preblank.begin(), preblank.end());
+  all_finals.insert(samecase.begin(), samecase.end());
 }
 
 void
@@ -1145,23 +1151,23 @@ FSTProcessor::analysis(FILE *input, FILE *output)
       else if(last_postblank)
       {
         printWord(sf.substr(0, sf.size()-input_buffer.diffPrevPos(last)),
-		  lf, output);
-	fputwc_unlocked(L' ', output);
+                  lf, output);
+        fputwc_unlocked(L' ', output);
         input_buffer.setPos(last);
         input_buffer.back(1);
       }
       else if(last_preblank)
       {
-	fputwc_unlocked(L' ', output);
+        fputwc_unlocked(L' ', output);
         printWord(sf.substr(0, sf.size()-input_buffer.diffPrevPos(last)),
-		  lf, output);
+                  lf, output);
         input_buffer.setPos(last);
         input_buffer.back(1);
       }
       else if(last_incond)
       {
         printWord(sf.substr(0, sf.size()-input_buffer.diffPrevPos(last)),
-		  lf, output);
+                  lf, output);
         input_buffer.setPos(last);
         input_buffer.back(1);
       }
