@@ -55,6 +55,7 @@ isLastBlankTM(false)
   compoundOnlyLSymbol = 0;
   compoundRSymbol = 0;
   compound_max_elements = 4;
+  generator = false;
 
   initial_state = new State();
   current_state = new State();
@@ -77,6 +78,7 @@ FSTProcessor::readEscaped(FILE *input)
 {
   if(feof(input))
   {
+    wcerr << "\nIn readEscaped" << endl;
     streamError();
   }
 
@@ -84,6 +86,7 @@ FSTProcessor::readEscaped(FILE *input)
 
   if(feof(input) || escaped_chars.find(val) == escaped_chars.end())
   {
+    wcerr << "\nfeof(input) || escaped_chars.find(val) == escaped_chars.end()\n";
     streamError();
   }
 
@@ -111,12 +114,37 @@ FSTProcessor::readFullBlock(FILE *input, wchar_t const delim1, wchar_t const del
     }
   }
 
+  //wcout << "result is" << result << endl;
   if(c != delim2)
   {
-    streamError();
+    streamError(); 
   }
 
-  return result;
+  if(!generator)
+  {
+    if(result[1] == L'{')
+    { 
+      if(!printed_word && temp_blank.length())
+      {
+        temp_blank = temp_blank.substr(0,temp_blank.length()-2) + L"," + result.substr(2,result.length()-2);
+        last_blank = result;
+      }
+      else
+        temp_blank = result;
+      in_inline_blank = true;
+      non_inline = false;
+      printed_word = false;
+      return L"";
+    }
+    else
+    { 
+      non_inline = true;
+      in_inline_blank = false;
+      return result;
+    }
+  }
+  else
+    return result;
 }
 
 int
@@ -135,33 +163,49 @@ FSTProcessor::readAnalysis(FILE *input)
   }
 
   if(escaped_chars.find(val) != escaped_chars.end())
-  {
+  { 
     switch(val)
-    {
+    { 
       case L'<':
+        // alnum_found = false;
         altval = static_cast<int>(alphabet(readFullBlock(input, L'<', L'>')));
-	input_buffer.add(altval);
+  input_buffer.add(altval);
         return altval;
 
       case L'[':
+        // alnum_found = false;
         blankqueue.push(readFullBlock(input, L'[', L']'));
         input_buffer.add(static_cast<int>(L' '));
         return static_cast<int>(L' ');
 
       case L'\\':
+        // alnum_found = false;
         val = static_cast<wchar_t>(fgetwc_unlocked(input));
         if(escaped_chars.find(val) == escaped_chars.end())
         {
+          wcerr << "\nreadAnalysis error\n";
           streamError();
         }
+        // if(isalnum((char)val))
+        //   alnum_found = true;
         input_buffer.add(static_cast<int>(val));
         return val;
 
       default:
+        wcerr << "default readAnalysis error\n";
         streamError();
     }
   }
 
+  // if(isalnum((char)val))
+  // {
+  //   alnum_found = true;
+  //   if(first_time)
+  //   {
+  //     i_tag2 = L"";
+  //     i_tag1 = L"";
+  //   }
+  // }
   input_buffer.add(val);
   return val;
 }
@@ -188,7 +232,7 @@ FSTProcessor::readTMAnalysis(FILE *input)
     {
       case L'<':
         altval = static_cast<int>(alphabet(readFullBlock(input, L'<', L'>')));
-	input_buffer.add(altval);
+  input_buffer.add(altval);
         return altval;
 
       case L'[':
@@ -201,6 +245,7 @@ FSTProcessor::readTMAnalysis(FILE *input)
         val = static_cast<wchar_t>(fgetwc_unlocked(input));
         if(escaped_chars.find(val) == escaped_chars.end())
         {
+          wcerr << "readTMAnalysis error\n";
           streamError();
         }
         input_buffer.add(static_cast<int>(val));
@@ -230,6 +275,7 @@ FSTProcessor::readTMAnalysis(FILE *input)
         break;
 
       default:
+        wcerr << "default readTMAnalysis error\n";
         streamError();
     }
   }
@@ -268,7 +314,8 @@ FSTProcessor::readPostgeneration(FILE *input)
     case L'\\':
       val = static_cast<wchar_t>(fgetwc_unlocked(input));
       if(escaped_chars.find(val) == escaped_chars.end())
-      {
+      { 
+        wcerr << "readPostgeneration error";
         streamError();
       }
       input_buffer.add(static_cast<int>(val));
@@ -297,7 +344,7 @@ FSTProcessor::skipUntil(FILE *input, FILE *output, wint_t const character)
         val = fgetwc_unlocked(input);
         if(feof(input))
         {
-	  return;
+    return;
         }
         fputwc_unlocked(L'\\', output);
         fputwc_unlocked(val, output);
@@ -392,7 +439,8 @@ FSTProcessor::readGeneration(FILE *input, FILE *output)
     {
       if(feof(input))
       {
-	streamError();
+        wcerr << "readGeneration error\n";
+  streamError();
       }
       cad += static_cast<wchar_t>(val);
     }
@@ -481,7 +529,8 @@ FSTProcessor::readBilingual(FILE *input, FILE *output)
     {
       if(feof(input))
       {
-	streamError();
+        wcerr << "readBilingual error\n";
+  streamError();
       }
       cad += static_cast<wchar_t>(val);
     }
@@ -490,7 +539,7 @@ FSTProcessor::readBilingual(FILE *input, FILE *output)
     int res = alphabet(cad);
 
     if (res == 0) {
-	    symbol = cad;
+      symbol = cad;
     }
     return pair<wstring, int>(symbol, res);
   }
@@ -611,31 +660,46 @@ FSTProcessor::writeEscapedWithTags(wstring const &str, FILE *output)
 
 void
 FSTProcessor::printWord(wstring const &sf, wstring const &lf, FILE *output)
-{
+{ 
+/*  fputws_unlocked(i_tag1.c_str(),output);
+  i_tag1 = i_tag2;
+
+  n_time = 0;*/
   fputwc_unlocked(L'^', output);
   writeEscaped(sf, output);
   fputws_unlocked(lf.c_str(), output);
   fputwc_unlocked(L'$', output);
+  // alnum_found = false;
 }
 
 void
 FSTProcessor::printWordBilingual(wstring const &sf, wstring const &lf, FILE *output)
-{
+{  
+  /*fputws_unlocked(i_tag1.c_str(),output);
+    i_tag1 = i_tag2;
+  n_time = 0;
+*/
   fputwc_unlocked(L'^', output);
   fputws_unlocked(sf.c_str(), output);
   fputws_unlocked(lf.c_str(), output);
   fputwc_unlocked(L'$', output);
+  // alnum_found = false;
 }
 
 void
 FSTProcessor::printUnknownWord(wstring const &sf, FILE *output)
-{
+{ 
+  // fputws_unlocked(i_tag1.c_str(),output);
+
+  // i_tag1 = i_tag2;
+  // n_time = 0; 
   fputwc_unlocked(L'^', output);
   writeEscaped(sf, output);
   fputwc_unlocked(L'/', output);
   fputwc_unlocked(L'*', output);
   writeEscaped(sf, output);
   fputwc_unlocked(L'$', output);
+  // alnum_found = false;
 }
 
 unsigned int
@@ -710,7 +774,7 @@ FSTProcessor::load(FILE *input)
 
 void
 FSTProcessor::initAnalysis()
-{
+{ 
   calcInitial();
   classifyFinals();
   all_finals = standard;
@@ -736,6 +800,7 @@ FSTProcessor::initTMAnalysis()
 void
 FSTProcessor::initGeneration()
 {
+  generator = true;
   calcInitial();
   for(map<wstring, TransExe, Ltstr>::iterator it = transducers.begin(),
                                              limit = transducers.end();
@@ -1012,6 +1077,8 @@ FSTProcessor::analysis(FILE *input, FILE *output)
     analysis_wrapper_null_flush(input, output);
   }
 
+  printed_word = false;
+  non_inline = false;
   bool last_incond = false;
   bool last_postblank = false;
   bool last_preblank = false;
@@ -1020,12 +1087,38 @@ FSTProcessor::analysis(FILE *input, FILE *output)
   wstring sf = L"";
   int last = 0;
   bool firstupper = false, uppercase = false;
-
+  in_inline_blank = false;
+  wchar_t prev_val = L'\0';
+  temp_blank = L"";
+  wstring my_blank = L"";
   while(wchar_t val = readAnalysis(input))
   {
     // test for final states
-    if(current_state.isFinal(all_finals))
+    if(in_inline_blank)
     {
+      while(wchar_t value = readAnalysis(input))
+      {
+        if(!in_inline_blank || value != L' ')
+        {
+          val = value;
+          break;
+        }
+      }
+      if(!in_inline_blank && prev_val != L' ')
+      {
+        ungetwc(val,input);
+        val = L' ';
+      }
+      in_inline_blank = false;
+    }
+    //wcout << "\nLetter is " << val << endl;
+    if(current_state.isFinal(all_finals))
+    { 
+      //wcout << "\nall_finals\n";
+      string s1 (temp_blank.begin(), temp_blank.end());
+      string s2 (my_blank.begin(), my_blank.end());
+      if(strcmp(s1.c_str(),s2.c_str()))
+        my_blank = temp_blank;
       if(current_state.isFinal(inconditional))
       {
         if(!dictionaryCase)
@@ -1046,6 +1139,7 @@ FSTProcessor::analysis(FILE *input, FILE *output)
       }
       else if(current_state.isFinal(postblank))
       {
+      //wcout << "\npostblank\n";
         if(!dictionaryCase)
         {
           firstupper = iswupper(sf[0]);
@@ -1064,6 +1158,8 @@ FSTProcessor::analysis(FILE *input, FILE *output)
       }
       else if(current_state.isFinal(preblank))
       {
+
+      //wcout << "\npreblank\n";
         if(!dictionaryCase)
         {
           firstupper = iswupper(sf[0]);
@@ -1082,6 +1178,8 @@ FSTProcessor::analysis(FILE *input, FILE *output)
       }
       else if(!isAlphabetic(val))
       {
+
+      //wcout << "\nNot alphabetic\n";
         if(!dictionaryCase)
         {
           firstupper = iswupper(sf[0]);
@@ -1095,6 +1193,7 @@ FSTProcessor::analysis(FILE *input, FILE *output)
         lf = current_state.filterFinals(all_finals, alphabet,
                                         escaped_chars,
                                         uppercase, firstupper);
+        //wcout << "lf is:" << lf << endl;
         last_postblank = false;
         last_preblank = false;
         last_incond = false;
@@ -1103,6 +1202,8 @@ FSTProcessor::analysis(FILE *input, FILE *output)
     }
     else if(sf == L"" && iswspace(val))
     {
+
+      //wcout << "\nsf null\n";
       lf = L"/*";
       lf.append(sf);
       last_postblank = false;
@@ -1125,7 +1226,7 @@ FSTProcessor::analysis(FILE *input, FILE *output)
       alphabet.getSymbol(sf, val);
     }
     else
-    {
+    { 
       if(!isAlphabetic(val) && sf == L"")
       {
         if(iswspace(val))
@@ -1143,24 +1244,55 @@ FSTProcessor::analysis(FILE *input, FILE *output)
       }
       else if(last_postblank)
       {
+
+        if(non_inline)
+        {
+          non_inline = false;
+          temp_blank = L"";
+        }
+
+        fputws_unlocked(my_blank.c_str(), output);
         printWord(sf.substr(0, sf.size()-input_buffer.diffPrevPos(last)),
-		  lf, output);
-	fputwc_unlocked(L' ', output);
+      lf, output);
+        printed_word = true;
+        temp_blank = last_blank;
+  fputwc_unlocked(L' ', output);
         input_buffer.setPos(last);
         input_buffer.back(1);
       }
       else if(last_preblank)
       {
-	fputwc_unlocked(L' ', output);
+  fputwc_unlocked(L' ', output);
+  fputws_unlocked(my_blank.c_str(), output);
+
+        if(non_inline)
+        {
+          non_inline = false;
+          temp_blank = L"";
+        }
+
         printWord(sf.substr(0, sf.size()-input_buffer.diffPrevPos(last)),
-		  lf, output);
+      lf, output);
+
+        temp_blank = last_blank;
+        printed_word = true;
         input_buffer.setPos(last);
         input_buffer.back(1);
       }
       else if(last_incond)
       {
+        fputws_unlocked(my_blank.c_str(), output);
+        
+        if(non_inline)
+        {
+          non_inline = false;
+          temp_blank = L"";
+        }
         printWord(sf.substr(0, sf.size()-input_buffer.diffPrevPos(last)),
-		  lf, output);
+      lf, output);
+
+        temp_blank = last_blank;
+        printed_word = true;
         input_buffer.setPos(last);
         input_buffer.back(1);
       }
@@ -1198,16 +1330,44 @@ FSTProcessor::analysis(FILE *input, FILE *output)
             compound = compoundAnalysis(unknown_word, uppercase, firstupper);
             if(compound != L"")
             {
+              
+              if(non_inline)
+              {
+                non_inline = false;
+                temp_blank = L"";
+              }
+        fputws_unlocked(my_blank.c_str(), output);
               printWord(unknown_word, compound, output);
+              printed_word = true;
+              temp_blank = last_blank;
             }
             else
             {
+              if(non_inline)
+              {
+                non_inline = false;
+                temp_blank = L"";
+              }
+              fputws_unlocked(my_blank.c_str(), output);
+              ////temp_blank = temp_blank2;
               printUnknownWord(unknown_word, output);
+              temp_blank = last_blank;
+              printed_word = false;
             }
           }
           else
           {
+            
+            if(non_inline)
+            {
+              non_inline = false;
+              temp_blank = L"";
+            }
+
+            fputws_unlocked(my_blank.c_str(), output);
             printUnknownWord(unknown_word, output);
+            printed_word = true;
+            temp_blank = last_blank;
           }
         }
       }
@@ -1237,28 +1397,66 @@ FSTProcessor::analysis(FILE *input, FILE *output)
             compound = compoundAnalysis(unknown_word, uppercase, firstupper);
             if(compound != L"")
             {
+         
+              if(non_inline)
+              {
+                non_inline = false;
+                temp_blank = L"";
+              }
+
+              fputws_unlocked(my_blank.c_str(), output);
               printWord(unknown_word, compound, output);
+              printed_word = true;
+              temp_blank = last_blank;
             }
             else
             {
+              if(non_inline )
+              {
+                non_inline = false;
+                temp_blank = L"";
+              }
+              fputws_unlocked(my_blank.c_str(), output);
+              printed_word = true;
               printUnknownWord(unknown_word, output);
+              temp_blank = last_blank;
             }
           }
           else
           {
+         
+            if(non_inline)
+            {
+              non_inline = false;
+              temp_blank = L"";
+            }
+            fputws_unlocked(my_blank.c_str(), output);
+            printed_word = true;
             printUnknownWord(unknown_word, output);
+            temp_blank = last_blank;
           }
 
         }
       }
       else
       {
+        if(non_inline )
+        {
+          non_inline = false;
+          temp_blank = L"";
+        }
+        fputws_unlocked(my_blank.c_str(), output);
+
         printWord(sf.substr(0, sf.size()-input_buffer.diffPrevPos(last)),
                   lf, output);
+
+        temp_blank = last_blank;
+        printed_word = true;
         input_buffer.setPos(last);
         input_buffer.back(1);
       }
 
+      prev_val = val;
       current_state = *initial_state;
       lf = L"";
       sf = L"";
@@ -1355,7 +1553,7 @@ FSTProcessor::tm_analysis(FILE *input, FILE *output)
       if(iswpunct(val))
       {
         lf = current_state.filterFinalsTM(all_finals, alphabet,
-					  escaped_chars,
+            escaped_chars,
                                           blankqueue, numbers).substr(1);
         last = input_buffer.getPos();
         numbers.clear();
@@ -1448,22 +1646,10 @@ FSTProcessor::tm_analysis(FILE *input, FILE *output)
           blankqueue.pop();
         }
 
-/*
-        unsigned int limit = sf.find(L' ');
-        unsigned int size = sf.size();
-        limit = (limit == static_cast<unsigned int>(wstring::npos)?size:limit);
-        input_buffer.back(1+(size-limit));
-        fputws_unlocked(sf.substr(0, limit).c_str(), output);
-*/      }
+      }
       else if(lf == L"")
       {
-/*        unsigned int limit = sf.find(L' ');
-        unsigned int size = sf.size();
-        limit = (limit == static_cast<unsigned int >(wstring::npos)?size:limit);
-        input_buffer.back(1+(size-limit));
-        fputws_unlocked(sf.substr(0, limit).c_str(), output);
-*/
-        input_buffer.back(1);
+      input_buffer.back(1);
         fputws_unlocked(sf.c_str(), output);
 
         while(blankqueue.size() > 0)
@@ -1524,22 +1710,22 @@ FSTProcessor::generation(FILE *input, FILE *output, GenerationMode mode)
     {
       if(sf[0] == L'*' || sf[0] == L'%')
       {
-	if(mode != gm_clean && mode != gm_tagged_nm)
+  if(mode != gm_clean && mode != gm_tagged_nm)
         {
-	  writeEscaped(sf, output);
-	}
-	else if (mode == gm_clean)
-	{
-	  writeEscaped(sf.substr(1), output);
-	}
-	else if(mode == gm_tagged_nm)
-	{
-	  fputwc_unlocked(L'^', output);
-	  writeEscaped(removeTags(sf.substr(1)), output);
-	  fputwc_unlocked(L'/', output);
+    writeEscaped(sf, output);
+  }
+  else if (mode == gm_clean)
+  {
+    writeEscaped(sf.substr(1), output);
+  }
+  else if(mode == gm_tagged_nm)
+  {
+    fputwc_unlocked(L'^', output);
+    writeEscaped(removeTags(sf.substr(1)), output);
+    fputwc_unlocked(L'/', output);
           writeEscapedWithTags(sf, output);
-	  fputwc_unlocked(L'$', output);
-	}
+    fputwc_unlocked(L'$', output);
+  }
       }
       else if(sf[0] == L'@')
       {
@@ -1561,11 +1747,11 @@ FSTProcessor::generation(FILE *input, FILE *output, GenerationMode mode)
         }
         else if(mode == gm_tagged_nm)
         {
-	  fputwc_unlocked(L'^', output);
-	  writeEscaped(removeTags(sf.substr(1)), output);
-	  fputwc_unlocked(L'/', output);
+    fputwc_unlocked(L'^', output);
+    writeEscaped(removeTags(sf.substr(1)), output);
+    fputwc_unlocked(L'/', output);
           writeEscapedWithTags(sf, output);
-	  fputwc_unlocked(L'$', output);
+    fputwc_unlocked(L'$', output);
         }
       }
       else if(current_state.isFinal(all_finals))
@@ -1575,18 +1761,18 @@ FSTProcessor::generation(FILE *input, FILE *output, GenerationMode mode)
 
         if(mode == gm_tagged || mode == gm_tagged_nm)
         {
-	  fputwc_unlocked(L'^', output);
+    fputwc_unlocked(L'^', output);
         }
 
         fputws_unlocked(current_state.filterFinals(all_finals, alphabet,
                                                   escaped_chars,
                                                   uppercase, firstupper).substr(1).c_str(),
-						  output);
+              output);
         if(mode == gm_tagged || mode == gm_tagged_nm)
         {
-	  fputwc_unlocked(L'/', output);
-	  writeEscapedWithTags(sf, output);
-	  fputwc_unlocked(L'$', output);
+    fputwc_unlocked(L'/', output);
+    writeEscapedWithTags(sf, output);
+    fputwc_unlocked(L'$', output);
         }
 
       }
@@ -1594,8 +1780,8 @@ FSTProcessor::generation(FILE *input, FILE *output, GenerationMode mode)
       {
         if(mode == gm_all)
         {
-	  fputwc_unlocked(L'#', output);
-	  writeEscaped(sf, output);
+    fputwc_unlocked(L'#', output);
+    writeEscaped(sf, output);
         }
         else if(mode == gm_clean)
         {
@@ -1616,12 +1802,12 @@ FSTProcessor::generation(FILE *input, FILE *output, GenerationMode mode)
         }
         else if(mode == gm_tagged_nm)
         {
-	  fputwc_unlocked(L'^', output);
-	  writeEscaped(removeTags(sf), output);
-	  fputwc_unlocked(L'/', output);
-	  fputwc_unlocked(L'#', output);
+    fputwc_unlocked(L'^', output);
+    writeEscaped(removeTags(sf), output);
+    fputwc_unlocked(L'/', output);
+    fputwc_unlocked(L'#', output);
           writeEscapedWithTags(sf, output);
-	  fputwc_unlocked(L'$', output);
+    fputwc_unlocked(L'$', output);
         }
       }
 
@@ -1641,14 +1827,14 @@ FSTProcessor::generation(FILE *input, FILE *output, GenerationMode mode)
       alphabet.getSymbol(sf,val);
       if(current_state.size() > 0)
       {
-	if(!alphabet.isTag(val) && iswupper(val) && !caseSensitive)
-	{
-	  current_state.step(val, towlower(val));
-	}
-	else
-	{
-	  current_state.step(val);
-	}
+  if(!alphabet.isTag(val) && iswupper(val) && !caseSensitive)
+  {
+    current_state.step(val, towlower(val));
+  }
+  else
+  {
+    current_state.step(val);
+  }
       }
     }
   }
@@ -1680,7 +1866,7 @@ FSTProcessor::postgeneration(FILE *input, FILE *output)
     {
       if(iswspace(val))
       {
-	printSpace(val, output);
+  printSpace(val, output);
       }
       else
       {
@@ -1688,7 +1874,7 @@ FSTProcessor::postgeneration(FILE *input, FILE *output)
         {
           fputwc_unlocked(L'\\', output);
         }
-      	fputwc_unlocked(val, output);
+        fputwc_unlocked(val, output);
       }
     }
     else
@@ -1699,8 +1885,8 @@ FSTProcessor::postgeneration(FILE *input, FILE *output)
         bool firstupper = iswupper(sf[1]);
         bool uppercase = sf.size() > 1 && firstupper && iswupper(sf[2]);
         lf = current_state.filterFinals(all_finals, alphabet,
-					empty_escaped_chars,
-					uppercase, firstupper, 0);
+          empty_escaped_chars,
+          uppercase, firstupper, 0);
 
         // case of the beggining of the next word
 
@@ -1769,7 +1955,7 @@ FSTProcessor::postgeneration(FILE *input, FILE *output)
       else
       {
         if(lf == L"")
-	{
+  {
           unsigned int mark = sf.size();
           for(unsigned int i = 1, limit = sf.size(); i < limit; i++)
           {
@@ -1779,40 +1965,40 @@ FSTProcessor::postgeneration(FILE *input, FILE *output)
               break;
             }
           }
-	  fputws_unlocked(sf.substr(1, mark-1).c_str(), output);
+    fputws_unlocked(sf.substr(1, mark-1).c_str(), output);
           if(mark == sf.size())
           {
-	    input_buffer.back(1);
+      input_buffer.back(1);
           }
           else
           {
             input_buffer.back(sf.size()-mark);
-	  }
-	}
-	else
-	{
-	  fputws_unlocked(lf.substr(1,lf.size()-3).c_str(), output);
-	  input_buffer.setPos(last);
+    }
+  }
+  else
+  {
+    fputws_unlocked(lf.substr(1,lf.size()-3).c_str(), output);
+    input_buffer.setPos(last);
           input_buffer.back(2);
           val = lf[lf.size()-2];
-	  if(iswspace(val))
-	  {
-	    printSpace(val, output);
-	  }
-	  else
-	  {
-	    if(isEscaped(val))
-	    {
-	      fputwc_unlocked(L'\\', output);
-	    }
-	    fputwc_unlocked(val, output);
-	  }
-	}
+    if(iswspace(val))
+    {
+      printSpace(val, output);
+    }
+    else
+    {
+      if(isEscaped(val))
+      {
+        fputwc_unlocked(L'\\', output);
+      }
+      fputwc_unlocked(val, output);
+    }
+  }
 
-	current_state = *initial_state;
-	lf = L"";
-	sf = L"";
-	skip_mode = true;
+  current_state = *initial_state;
+  lf = L"";
+  sf = L"";
+  skip_mode = true;
       }
     }
   }
@@ -1957,12 +2143,12 @@ FSTProcessor::biltransfull(wstring const &input_word, bool with_delim)
       symbol = L'<';
       for(unsigned int j = i + 1; j <= end_point; j++)
       {
-	symbol += input_word[j];
-	if(input_word[j] == L'>')
-	{
-	  i = j;
-	  break;
-	}
+  symbol += input_word[j];
+  if(input_word[j] == L'>')
+  {
+    i = j;
+    break;
+  }
       }
       val = alphabet(symbol);
     }
@@ -1974,11 +2160,11 @@ FSTProcessor::biltransfull(wstring const &input_word, bool with_delim)
     {
       if(!alphabet.isTag(val) && iswupper(val) && !caseSensitive)
       {
-	current_state.step(val, towlower(val));
+  current_state.step(val, towlower(val));
       }
       else
       {
-	current_state.step(val);
+  current_state.step(val);
       }
     }
     if(current_state.isFinal(all_finals))
@@ -2018,15 +2204,15 @@ FSTProcessor::biltransfull(wstring const &input_word, bool with_delim)
       }
       else
       {
-	// word is not present
+  // word is not present
         if(with_delim)
-	{
+  {
           result = L"^@" + input_word.substr(1);
-	}
+  }
         else
-	{
+  {
           result = L"@" + input_word;
-	}
+  }
         return result;
       }
     }
@@ -2047,12 +2233,12 @@ FSTProcessor::biltransfull(wstring const &input_word, bool with_delim)
       {
         case L'\\':
           result_with_queue += L'\\';
-	  i++;
+    i++;
           break;
 
         case L'/':
           result_with_queue.append(queue);
-	  break;
+    break;
 
         default:
           break;
@@ -2124,12 +2310,12 @@ FSTProcessor::biltrans(wstring const &input_word, bool with_delim)
       symbol = L'<';
       for(unsigned int j = i + 1; j <= end_point; j++)
       {
-	symbol += input_word[j];
-	if(input_word[j] == L'>')
-	{
-	  i = j;
-	  break;
-	}
+  symbol += input_word[j];
+  if(input_word[j] == L'>')
+  {
+    i = j;
+    break;
+  }
       }
       val = alphabet(symbol);
     }
@@ -2141,11 +2327,11 @@ FSTProcessor::biltrans(wstring const &input_word, bool with_delim)
     {
       if(!alphabet.isTag(val) && iswupper(val) && !caseSensitive)
       {
-	current_state.step(val, towlower(val));
+  current_state.step(val, towlower(val));
       }
       else
       {
-	current_state.step(val);
+  current_state.step(val);
       }
     }
     if(current_state.isFinal(all_finals))
@@ -2185,15 +2371,15 @@ FSTProcessor::biltrans(wstring const &input_word, bool with_delim)
       }
       else
       {
-	// word is not present
+  // word is not present
         if(with_delim)
-	{
+  {
           result = L"^@" + input_word.substr(1);
-	}
+  }
         else
-	{
+  {
           result = L"@" + input_word;
-	}
+  }
         return result;
       }
     }
@@ -2210,12 +2396,12 @@ FSTProcessor::biltrans(wstring const &input_word, bool with_delim)
       {
         case L'\\':
           result_with_queue += L'\\';
-	  i++;
+    i++;
           break;
 
         case L'/':
           result_with_queue.append(queue);
-	  break;
+    break;
 
         default:
           break;
@@ -2289,22 +2475,22 @@ FSTProcessor::bilingual(FILE *input, FILE *output)
   }
 
   State current_state = *initial_state;
-  wstring sf = L"";		// source language analysis
-  wstring queue = L"";		// symbols to be added to each target
-  wstring result = L"";		// result of looking up analysis in bidix
+  wstring sf = L"";   // source language analysis
+  wstring queue = L"";    // symbols to be added to each target
+  wstring result = L"";   // result of looking up analysis in bidix
 
   outOfWord = false;
 
   skipUntil(input, output, L'^');
-  pair<wstring,int> tr;		// readBilingual return value, containing:
-  int val;			// the alphabet value of current symbol, and
-  wstring symbol = L"";		// the current symbol as a string
+  pair<wstring,int> tr;   // readBilingual return value, containing:
+  int val;      // the alphabet value of current symbol, and
+  wstring symbol = L"";   // the current symbol as a string
   bool seentags = false;  // have we seen any tags at all in the analysis?
 
   bool seensurface = false;
   wstring surface = L"";
 
-  while(true)			// ie. while(val != 0x7fffffff)
+  while(true)     // ie. while(val != 0x7fffffff)
   {
     tr = readBilingual(input, output);
     symbol = tr.first;
@@ -2495,12 +2681,12 @@ FSTProcessor::biltransWithQueue(wstring const &input_word, bool with_delim)
       symbol = L'<';
       for(unsigned int j = i + 1; j <= end_point; j++)
       {
-	symbol += input_word[j];
-	if(input_word[j] == L'>')
-	{
-	  i = j;
-	  break;
-	}
+  symbol += input_word[j];
+  if(input_word[j] == L'>')
+  {
+    i = j;
+    break;
+  }
       }
       val = alphabet(symbol);
     }
@@ -2512,11 +2698,11 @@ FSTProcessor::biltransWithQueue(wstring const &input_word, bool with_delim)
     {
       if(!alphabet.isTag(val) && iswupper(val) && !caseSensitive)
       {
-	current_state.step(val, towlower(val));
+  current_state.step(val, towlower(val));
       }
       else
       {
-	current_state.step(val);
+  current_state.step(val);
       }
     }
     if(current_state.isFinal(all_finals))
@@ -2600,12 +2786,12 @@ FSTProcessor::biltransWithQueue(wstring const &input_word, bool with_delim)
       {
         case L'\\':
           result_with_queue += L'\\';
-	  i++;
+    i++;
           break;
 
         case L'/':
           result_with_queue.append(queue);
-	  break;
+    break;
 
         default:
           break;
@@ -2674,12 +2860,12 @@ FSTProcessor::biltransWithoutQueue(wstring const &input_word, bool with_delim)
       symbol = L'<';
       for(unsigned int j = i + 1; j <= end_point; j++)
       {
-	symbol += input_word[j];
-	if(input_word[j] == L'>')
-	{
-	  i = j;
-	  break;
-	}
+  symbol += input_word[j];
+  if(input_word[j] == L'>')
+  {
+    i = j;
+    break;
+  }
       }
       val = alphabet(symbol);
     }
@@ -2691,11 +2877,11 @@ FSTProcessor::biltransWithoutQueue(wstring const &input_word, bool with_delim)
     {
       if(!alphabet.isTag(val) && iswupper(val) && !caseSensitive)
       {
-	current_state.step(val, towlower(val));
+  current_state.step(val, towlower(val));
       }
       else
       {
-	current_state.step(val);
+  current_state.step(val);
       }
     }
     if(current_state.isFinal(all_finals))
@@ -2731,15 +2917,15 @@ FSTProcessor::biltransWithoutQueue(wstring const &input_word, bool with_delim)
     {
       if(symbol == L"")
       {
-	// word is not present
+  // word is not present
         if(with_delim)
-	{
+  {
           result = L"^@" + input_word.substr(1);
-	}
+  }
         else
-	{
+  {
           result = L"@" + input_word;
-	}
+  }
         return result;
       }
     }
@@ -2806,6 +2992,7 @@ FSTProcessor::readSAO(FILE *input)
       }
       else
       {
+        wcerr << "readSAO error\n";
         streamError();
       }
     }
@@ -2817,10 +3004,14 @@ FSTProcessor::readSAO(FILE *input)
         return static_cast<int>(val);
       }
       else
+      { 
+        wcerr << "some streamError\n";
         streamError();
+      }
     }
     else
-    {
+    { 
+      wcerr << "some other streamError\n";
       streamError();
     }
   }
@@ -2945,7 +3136,7 @@ FSTProcessor::SAO(FILE *input, FILE *output)
       else if(last_postblank)
       {
         printSAOWord(lf, output);
-	fputwc_unlocked(L' ', output);
+  fputwc_unlocked(L' ', output);
         input_buffer.setPos(last);
         input_buffer.back(1);
       }

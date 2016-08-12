@@ -51,6 +51,7 @@ enum GenerationMode
 class FSTProcessor
 {
 private:
+
   /**
    * Transducers in FSTP
    */
@@ -180,9 +181,19 @@ private:
    */
   int compound_max_elements;
 
+  bool generator;
+
   /**
    * Prints an error of input stream and exits
    */
+   bool in_inline_blank;
+
+  wstring temp_blank;
+  bool non_inline;
+  bool printed_word;
+  wstring last_blank;
+
+
   void streamError();
 
   /**
