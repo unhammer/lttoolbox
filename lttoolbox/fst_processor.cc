@@ -1111,14 +1111,18 @@ FSTProcessor::analysis(FILE *input, FILE *output)
       }
       in_inline_blank = false;
     }
-    //wcout << "\nLetter is " << val << endl;
+    // wcout << "\nLetter is " << val << endl;
     if(current_state.isFinal(all_finals))
     { 
-      //wcout << "\nall_finals\n";
-      string s1 (temp_blank.begin(), temp_blank.end());
-      string s2 (my_blank.begin(), my_blank.end());
-      if(strcmp(s1.c_str(),s2.c_str()))
-        my_blank = temp_blank;
+      // wcout << "\nall_finals\n";
+      if(temp_blank.length())
+      {
+        string s1 (temp_blank.begin(), temp_blank.end());
+        string s2 (my_blank.begin(), my_blank.end());
+        if(strcmp(s1.c_str(),s2.c_str()))
+          my_blank = temp_blank;
+      }
+
       if(current_state.isFinal(inconditional))
       {
         if(!dictionaryCase)
@@ -1250,7 +1254,7 @@ FSTProcessor::analysis(FILE *input, FILE *output)
           non_inline = false;
           temp_blank = L"";
         }
-
+        // wcout << "last_postblank" << endl;
         fputws_unlocked(my_blank.c_str(), output);
         printWord(sf.substr(0, sf.size()-input_buffer.diffPrevPos(last)),
       lf, output);
@@ -1281,6 +1285,8 @@ FSTProcessor::analysis(FILE *input, FILE *output)
       }
       else if(last_incond)
       {
+
+        // wcout << "last_incond" << endl;
         fputws_unlocked(my_blank.c_str(), output);
         
         if(non_inline)
@@ -1424,7 +1430,6 @@ FSTProcessor::analysis(FILE *input, FILE *output)
           }
           else
           {
-         
             if(non_inline)
             {
               non_inline = false;
@@ -1446,6 +1451,7 @@ FSTProcessor::analysis(FILE *input, FILE *output)
           temp_blank = L"";
         }
         fputws_unlocked(my_blank.c_str(), output);
+
 
         printWord(sf.substr(0, sf.size()-input_buffer.diffPrevPos(last)),
                   lf, output);
