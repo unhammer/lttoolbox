@@ -130,7 +130,10 @@ FSTProcessor::readFullBlock(FILE *input, wchar_t const delim1, wchar_t const del
         last_blank = result;
       }
       else
+      {
         temp_blank = result;
+        last_blank = result;
+      }
       in_inline_blank = true;
       non_inline = false;
       printed_word = false;
@@ -138,6 +141,7 @@ FSTProcessor::readFullBlock(FILE *input, wchar_t const delim1, wchar_t const del
     }
     else
     { 
+      last_blank = L"";
       non_inline = true;
       in_inline_blank = false;
       return result;
@@ -1115,13 +1119,11 @@ FSTProcessor::analysis(FILE *input, FILE *output)
     if(current_state.isFinal(all_finals))
     { 
       // wcout << "\nall_finals\n";
-      if(temp_blank.length())
-      {
-        string s1 (temp_blank.begin(), temp_blank.end());
-        string s2 (my_blank.begin(), my_blank.end());
-        if(strcmp(s1.c_str(),s2.c_str()))
-          my_blank = temp_blank;
-      }
+      string s1 (temp_blank.begin(), temp_blank.end());
+      string s2 (my_blank.begin(), my_blank.end());
+      if(strcmp(s1.c_str(),s2.c_str()))
+        my_blank = temp_blank;
+    
 
       if(current_state.isFinal(inconditional))
       {
