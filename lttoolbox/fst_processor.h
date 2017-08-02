@@ -182,6 +182,16 @@ private:
   int compound_max_elements;
 
   /**
+   * for multiple whitespaces(blanks) if any exist in the input 
+   */
+  int superblank; 
+
+  /**
+   * to check whether we need to print the blanks or not
+   */
+  int blankFlag;
+
+  /**
    * Prints an error of input stream and exits
    */
   void streamError();
