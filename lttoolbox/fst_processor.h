@@ -184,7 +184,7 @@ private:
   /**
    * for multiple whitespaces(blanks) if any exist in the input 
    */
-  int superblank; 
+  int inlineblank; 
 
   /**
    * to check whether we need to print the blanks or not

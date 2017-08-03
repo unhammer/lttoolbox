@@ -163,7 +163,7 @@ FSTProcessor::readAnalysis(FILE *input)
   }
 
   else if(val == ' '){
-    superblank++;
+    inlineblank++;
     blankFlag = 1;
   }
 
@@ -668,6 +668,8 @@ FSTProcessor::printSpace(wchar_t const val, FILE *output)
   {
     fputwc_unlocked(val, output);
     blankFlag = 0;
+    inlineblank = 0;
+
   }
 }
 
@@ -862,7 +864,7 @@ FSTProcessor::analysis(FILE *input, FILE *output)
   wstring sf = L"";
   int last = 0;
   bool firstupper = false, uppercase = false;
-  superblank = 0;
+  inlineblank = 0;
   blankFlag = 0;
 
   while(wchar_t val = readAnalysis(input))
@@ -1102,10 +1104,11 @@ FSTProcessor::analysis(FILE *input, FILE *output)
         input_buffer.setPos(last);
         
         if(blankFlag == 1){
-          for(int i = 0; i < superblank ; i++){
+          for(int i = 0; i < inlineblank ; i++){
             fputwc_unlocked(val, output);
           }
           blankFlag = 0;
+          inlineblank = 0;
         }
       }
 
