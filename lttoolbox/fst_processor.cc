@@ -122,11 +122,7 @@ FSTProcessor::readFullBlock(FILE *input, wchar_t const delim1, wchar_t const del
 int
 FSTProcessor::readAnalysis(FILE *input)
 {
-  if(!input_buffer.isEmpty())
-  {
-    return input_buffer.next();
-  }
-
+  
   wchar_t val = static_cast<wchar_t>(fgetwc_unlocked(input));
   int altval = 0;
   if(feof(input))
