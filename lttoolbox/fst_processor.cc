@@ -123,6 +123,10 @@ int
 FSTProcessor::readAnalysis(FILE *input)
 {
   
+  if(!input_buffer.isEmpty()){
+   return input_buffer.next();
+  }
+
   wchar_t val = static_cast<wchar_t>(fgetwc_unlocked(input));
   int altval = 0;
   if(feof(input))
@@ -1098,10 +1102,11 @@ FSTProcessor::analysis(FILE *input, FILE *output)
         printWord(sf.substr(0, sf.size()-input_buffer.diffPrevPos(last)),
                   lf, output);
         input_buffer.setPos(last);
-        
+        input_buffer.back(1);
+
         if(blankFlag == 1){
           for(int i = 0; i < inlineblank ; i++){
-            fputwc_unlocked(val, output);
+            fputwc_unlocked(L' ', output);
           }
           blankFlag = 0;
           inlineblank = 0;
