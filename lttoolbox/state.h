@@ -260,7 +260,7 @@ public:
   wstring filterFinalsTM(set<Node *> const &finals, 
 			 Alphabet const &alphabet,
                          set<wchar_t> const &escaped_chars,
-			 queue<wstring> &blanks, 
+			 deque<wstring> &blanks, 
                          vector<wstring> &numbers) const;
 };
 

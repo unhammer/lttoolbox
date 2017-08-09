@@ -144,7 +144,13 @@ FSTProcessor::readAnalysis(FILE *input)
         return altval;
 
       case L'[':
-        blankqueue.push(readFullBlock(input, L'[', L']'));
+        if(blankqueueCopy.size() > 0){
+          while(!blankqueueCopy.empty()){
+            blankqueueCopy.pop_front();
+          }
+        }
+        blankqueue.push_back(readFullBlock(input, L'[', L']'));
+        blankqueueCopy.push_back(blankqueue.back());
         input_buffer.add(static_cast<int>(L' '));
         return static_cast<int>(L' ');
 
@@ -197,7 +203,7 @@ FSTProcessor::readTMAnalysis(FILE *input)
         return altval;
 
       case L'[':
-        blankqueue.push(readFullBlock(input, L'[', L']'));
+        blankqueue.push_back(readFullBlock(input, L'[', L']'));
         input_buffer.add(static_cast<int>(L' '));
         isLastBlankTM = true;
         return static_cast<int>(L' ');
@@ -266,7 +272,7 @@ FSTProcessor::readPostgeneration(FILE *input)
       return altval;
 
     case L'[':
-      blankqueue.push(readFullBlock(input, L'[', L']'));
+      blankqueue.push_back(readFullBlock(input, L'[', L']'));
       input_buffer.add(static_cast<int>(L' '));
       return static_cast<int>(L' ');
 
@@ -509,12 +515,19 @@ FSTProcessor::readBilingual(FILE *input, FILE *output)
 }
 
 void
+FSTProcessor::dequeIterate(FILE *output){
+  for(unsigned int i = 0; i < blankqueueCopy.size(); i++){
+    fputws_unlocked(blankqueueCopy[i].c_str(), output);
+  }
+}
+
+void
 FSTProcessor::flushBlanks(FILE *output)
 {
-  for(unsigned int i = blankqueue.size(); i > 0; i--)
+  for(unsigned int i = 0; i < blankqueue.size(); i++)
   {
-    fputws_unlocked(blankqueue.front().c_str(), output);
-    blankqueue.pop();
+    fputws_unlocked(blankqueue[i].c_str(), output);
+    blankqueue.pop_front();
   }
 }
 
@@ -663,6 +676,7 @@ FSTProcessor::printSpace(wchar_t const val, FILE *output)
   if(blankqueue.size() > 0)
   {
     flushBlanks(output);
+    inlineTags = 1;
   }
   else if(blankFlag == 1)
   {
@@ -866,6 +880,8 @@ FSTProcessor::analysis(FILE *input, FILE *output)
   bool firstupper = false, uppercase = false;
   inlineblank = 0;
   blankFlag = 0;
+  character = 0;
+  inlineTags = 0;
 
   while(wchar_t val = readAnalysis(input))
   {
@@ -969,6 +985,13 @@ FSTProcessor::analysis(FILE *input, FILE *output)
     if(current_state.size() != 0)
     {
       alphabet.getSymbol(sf, val);
+      character++;
+      if(inlineTags == 1 && character == 1){
+        inlineTags = 0;
+      }
+      else if(inlineTags == 0 && character == 1){
+        dequeIterate(output);
+      }
     }
     else
     {
@@ -977,6 +1000,7 @@ FSTProcessor::analysis(FILE *input, FILE *output)
         if(iswspace(val))
         {
           printSpace(val, output);
+          character = 0;
         }
         else
         {
@@ -1102,7 +1126,8 @@ FSTProcessor::analysis(FILE *input, FILE *output)
         printWord(sf.substr(0, sf.size()-input_buffer.diffPrevPos(last)),
                   lf, output);
         input_buffer.setPos(last);
-        input_buffer.back(1);
+        character = 0;
+        // input_buffer.back(1);
 
         if(blankFlag == 1){
           for(int i = 0; i < inlineblank ; i++){
@@ -1299,7 +1324,7 @@ FSTProcessor::tm_analysis(FILE *input, FILE *output)
           {
             break;
           }
-          blankqueue.pop();
+          blankqueue.pop_front();
         }
 
 /*
@@ -1326,7 +1351,7 @@ FSTProcessor::tm_analysis(FILE *input, FILE *output)
           {
             break;
           }
-          blankqueue.pop();
+          blankqueue.pop_front();
         }
 
       }
@@ -2665,7 +2690,7 @@ FSTProcessor::readSAO(FILE *input)
         {
           str.append(readFullBlock(input, L'<', L'>').substr(1));
         }
-        blankqueue.push(str);
+        blankqueue.push_back(str);
         input_buffer.add(static_cast<int>(L' '));
         return static_cast<int>(L' ');
       }

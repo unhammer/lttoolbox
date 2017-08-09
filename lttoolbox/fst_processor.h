@@ -93,9 +93,14 @@ private:
   set<Node *> all_finals;
 
   /**
-   * Queue of blanks, used in reading methods
+   * deque of blanks, used in reading methods
    */
-  queue<wstring> blankqueue;
+  deque<wstring> blankqueue;
+
+  /**
+   * deque of blanks, used in reading methods
+   */
+  deque<wstring> blankqueueCopy;
 
   /**
    * Set of characters being considered alphabetics
@@ -192,6 +197,16 @@ private:
   int blankFlag;
 
   /**
+    * to have a look at the first read character of all the words
+    */
+  int character;
+
+  /**
+    * to have a flag as to the inline tags are already printed or not
+    */
+  int inlineTags;
+
+  /**
    * Prints an error of input stream and exits
    */
   void streamError();
@@ -273,6 +288,8 @@ private:
    */
   void flushBlanks(FILE *output);
 
+
+  void dequeIterate(FILE *output);
   /**
    * Calculate the initial state of parsing
    */
