@@ -95,12 +95,12 @@ private:
   /**
    * deque of blanks, used in reading methods
    */
-  deque<wstring> blankqueue;
+  deque<wstring> blankdeque;
 
   /**
    * deque of blanks, used in reading methods
    */
-  deque<wstring> blankqueueCopy;
+  deque<wstring> blankdequeCopy;
 
   /**
    * Set of characters being considered alphabetics
@@ -207,6 +207,12 @@ private:
   int inlineTags;
 
   /**
+   * to have a look at the tag box whether it is at the begenig
+   * of the lexical unit or at the end, so as to print the [] according.
+    */
+  int endingTags;
+
+  /**
    * Prints an error of input stream and exits
    */
   void streamError();
@@ -288,8 +294,16 @@ private:
    */
   void flushBlanks(FILE *output);
 
-
+  /**
+   * Iterate through the copy of the deque copy we have 
+   */
   void dequeIterate(FILE *output);
+  
+  /**
+   * to flushout the dequeCopy
+   */
+  void flushDeque();
+
   /**
    * Calculate the initial state of parsing
    */

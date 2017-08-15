@@ -144,13 +144,16 @@ FSTProcessor::readAnalysis(FILE *input)
         return altval;
 
       case L'[':
-        if(blankqueueCopy.size() > 0){
-          while(!blankqueueCopy.empty()){
-            blankqueueCopy.pop_front();
+        if(blankdequeCopy.size() > 0){
+          while(!blankdequeCopy.empty()){
+            blankdequeCopy.pop_front();
           }
         }
-        blankqueue.push_back(readFullBlock(input, L'[', L']'));
-        blankqueueCopy.push_back(blankqueue.back());
+        if( blankFlag == 0){
+          endingTags = 1;
+        }
+        blankdeque.push_back(readFullBlock(input, L'[', L']'));
+        blankdequeCopy.push_back(blankdeque.back());
         input_buffer.add(static_cast<int>(L' '));
         return static_cast<int>(L' ');
 
@@ -203,7 +206,7 @@ FSTProcessor::readTMAnalysis(FILE *input)
         return altval;
 
       case L'[':
-        blankqueue.push_back(readFullBlock(input, L'[', L']'));
+        blankdeque.push_back(readFullBlock(input, L'[', L']'));
         input_buffer.add(static_cast<int>(L' '));
         isLastBlankTM = true;
         return static_cast<int>(L' ');
@@ -272,7 +275,7 @@ FSTProcessor::readPostgeneration(FILE *input)
       return altval;
 
     case L'[':
-      blankqueue.push_back(readFullBlock(input, L'[', L']'));
+      blankdeque.push_back(readFullBlock(input, L'[', L']'));
       input_buffer.add(static_cast<int>(L' '));
       return static_cast<int>(L' ');
 
@@ -515,19 +518,27 @@ FSTProcessor::readBilingual(FILE *input, FILE *output)
 }
 
 void
+FSTProcessor::flushDeque(){
+  for(unsigned int i = 0; i < blankdequeCopy.size(); i++){
+      blankdequeCopy.pop_front();
+  }
+}
+
+
+void
 FSTProcessor::dequeIterate(FILE *output){
-  for(unsigned int i = 0; i < blankqueueCopy.size(); i++){
-    fputws_unlocked(blankqueueCopy[i].c_str(), output);
+  for(unsigned int i = 0; i < blankdequeCopy.size(); i++){
+    fputws_unlocked(blankdequeCopy[i].c_str(), output);
   }
 }
 
 void
 FSTProcessor::flushBlanks(FILE *output)
 {
-  for(unsigned int i = 0; i < blankqueue.size(); i++)
+  for(unsigned int i = 0; i < blankdeque.size(); i++)
   {
-    fputws_unlocked(blankqueue[i].c_str(), output);
-    blankqueue.pop_front();
+    fputws_unlocked(blankdeque[i].c_str(), output);
+    blankdeque.pop_front();
   }
 }
 
@@ -673,7 +684,7 @@ FSTProcessor::lastBlank(wstring const &str)
 void
 FSTProcessor::printSpace(wchar_t const val, FILE *output)
 {
-  if(blankqueue.size() > 0)
+  if(blankdeque.size() > 0)
   {
     flushBlanks(output);
     inlineTags = 1;
@@ -882,6 +893,7 @@ FSTProcessor::analysis(FILE *input, FILE *output)
   blankFlag = 0;
   character = 0;
   inlineTags = 0;
+  endingTags = 0;
 
   while(wchar_t val = readAnalysis(input))
   {
@@ -986,8 +998,10 @@ FSTProcessor::analysis(FILE *input, FILE *output)
     {
       alphabet.getSymbol(sf, val);
       character++;
+
       if(inlineTags == 1 && character == 1){
         inlineTags = 0;
+        endingTags = 0;
       }
       else if(inlineTags == 0 && character == 1){
         dequeIterate(output);
@@ -1127,6 +1141,10 @@ FSTProcessor::analysis(FILE *input, FILE *output)
                   lf, output);
         input_buffer.setPos(last);
         character = 0;
+        if(endingTags == 1){
+          flushBlanks(output);
+          flushDeque();
+        }
         // input_buffer.back(1);
 
         if(blankFlag == 1){
@@ -1148,6 +1166,7 @@ FSTProcessor::analysis(FILE *input, FILE *output)
   }
 
   // print remaining blanks
+  fputwc_unlocked('\n', output);
   flushBlanks(output);
 }
 
@@ -1235,7 +1254,7 @@ FSTProcessor::tm_analysis(FILE *input, FILE *output)
       {
         lf = current_state.filterFinalsTM(all_finals, alphabet,
             escaped_chars,
-                                          blankqueue, numbers).substr(1);
+                                          blankdeque, numbers).substr(1);
         last = input_buffer.getPos();
         numbers.clear();
       }
@@ -1263,7 +1282,7 @@ FSTProcessor::tm_analysis(FILE *input, FILE *output)
       }
       else if(isLastBlankTM && val == L' ')
       {
-        sf.append(blankqueue.back());
+        sf.append(blankdeque.back());
       }
       else
       {
@@ -1300,7 +1319,7 @@ FSTProcessor::tm_analysis(FILE *input, FILE *output)
           }
           else if(isLastBlankTM && val == L' ')
           {
-            sf.append(blankqueue.back());
+            sf.append(blankdeque.back());
           }
           else
           {
@@ -1318,13 +1337,13 @@ FSTProcessor::tm_analysis(FILE *input, FILE *output)
         input_buffer.back(1);
         fputws_unlocked(sf.c_str(), output);
 
-        while(blankqueue.size() > 0)
+        while(blankdeque.size() > 0)
         {
-          if(blankqueue.size() == 1 && isLastBlankTM)
+          if(blankdeque.size() == 1 && isLastBlankTM)
           {
             break;
           }
-          blankqueue.pop_front();
+          blankdeque.pop_front();
         }
 
 /*
@@ -1345,13 +1364,13 @@ FSTProcessor::tm_analysis(FILE *input, FILE *output)
         input_buffer.back(1);
         fputws_unlocked(sf.c_str(), output);
 
-        while(blankqueue.size() > 0)
+        while(blankdeque.size() > 0)
         {
-          if(blankqueue.size() == 1 && isLastBlankTM)
+          if(blankdeque.size() == 1 && isLastBlankTM)
           {
             break;
           }
-          blankqueue.pop_front();
+          blankdeque.pop_front();
         }
 
       }
@@ -2690,7 +2709,7 @@ FSTProcessor::readSAO(FILE *input)
         {
           str.append(readFullBlock(input, L'<', L'>').substr(1));
         }
-        blankqueue.push_back(str);
+        blankdeque.push_back(str);
         input_buffer.add(static_cast<int>(L' '));
         return static_cast<int>(L' ');
       }
