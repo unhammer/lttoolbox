@@ -144,13 +144,13 @@ FSTProcessor::readAnalysis(FILE *input)
         return altval;
 
       case L'[':
+        if( blankFlag == 0 && blankdequeCopy.size() != 0){
+          endingTags = 1;
+        }
         if(blankdequeCopy.size() > 0){
           while(!blankdequeCopy.empty()){
             blankdequeCopy.pop_front();
           }
-        }
-        if( blankFlag == 0){
-          endingTags = 1;
         }
         blankdeque.push_back(readFullBlock(input, L'[', L']'));
         blankdequeCopy.push_back(blankdeque.back());
@@ -689,7 +689,7 @@ FSTProcessor::printSpace(wchar_t const val, FILE *output)
     flushBlanks(output);
     inlineTags = 1;
   }
-  else if(blankFlag == 1)
+  else if(blankFlag == 1 && inlineTags == 0)
   {
     fputwc_unlocked(val, output);
     blankFlag = 0;
@@ -1122,15 +1122,51 @@ FSTProcessor::analysis(FILE *input, FILE *output)
             if(compound != L"")
             {
               printWord(unknown_word, compound, output);
+              if(endingTags == 1){
+                flushBlanks(output);
+                flushDeque();
+              }
+
+              if(blankFlag == 1){
+                for(int i = 0; i < inlineblank ; i++){
+                  fputwc_unlocked(L' ', output);
+                }
+                blankFlag = 0;
+                inlineblank = 0;
+              }
             }
             else
             {
               printUnknownWord(unknown_word, output);
+              if(endingTags == 1){
+                flushBlanks(output);
+                flushDeque();
+              }
+
+              if(blankFlag == 1){
+                for(int i = 0; i < inlineblank ; i++){
+                  fputwc_unlocked(L' ', output);
+                }
+                blankFlag = 0;
+                inlineblank = 0;
+              }
             }
           }
           else
           {
             printUnknownWord(unknown_word, output);
+            if(endingTags == 1){
+              flushBlanks(output);
+              flushDeque();
+            }
+
+            if(blankFlag == 1){
+              for(int i = 0; i < inlineblank ; i++){
+                fputwc_unlocked(L' ', output);
+              }
+              blankFlag = 0;
+              inlineblank = 0;
+            }
           }
 
         }
@@ -1141,11 +1177,12 @@ FSTProcessor::analysis(FILE *input, FILE *output)
                   lf, output);
         input_buffer.setPos(last);
         character = 0;
+        // input_buffer.back(1);
+        
         if(endingTags == 1){
           flushBlanks(output);
           flushDeque();
         }
-        // input_buffer.back(1);
 
         if(blankFlag == 1){
           for(int i = 0; i < inlineblank ; i++){
