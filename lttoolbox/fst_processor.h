@@ -93,9 +93,14 @@ private:
   set<Node *> all_finals;
 
   /**
-   * Queue of blanks, used in reading methods
+   * deque of blanks, used in reading methods
    */
-  queue<wstring> blankqueue;
+  deque<wstring> blankdeque;
+
+  /**
+   * deque of blanks, used in reading methods
+   */
+  deque<wstring> blankdequeCopy;
 
   /**
    * Set of characters being considered alphabetics
@@ -182,6 +187,32 @@ private:
   int compound_max_elements;
 
   /**
+   * for multiple whitespaces(blanks) if any exist in the input 
+   */
+  int inlineblank; 
+
+  /**
+   * to check whether we need to print the blanks or not
+   */
+  int blankFlag;
+
+  /**
+    * to have a look at the first read character of all the words
+    */
+  int character;
+
+  /**
+    * to have a flag as to the inline tags are already printed or not
+    */
+  int inlineTags;
+
+  /**
+   * to have a look at the tag box whether it is at the begenig
+   * of the lexical unit or at the end, so as to print the [] according.
+    */
+  int endingTags;
+
+  /**
    * Prints an error of input stream and exits
    */
   void streamError();
@@ -262,6 +293,16 @@ private:
    * @param output stream to write blanks
    */
   void flushBlanks(FILE *output);
+
+  /**
+   * Iterate through the copy of the deque copy we have 
+   */
+  void dequeIterate(FILE *output);
+  
+  /**
+   * to flushout the dequeCopy
+   */
+  void flushDeque();
 
   /**
    * Calculate the initial state of parsing

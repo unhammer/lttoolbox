@@ -538,7 +538,7 @@ wstring
 State::filterFinalsTM(set<Node *> const &finals, 
 		      Alphabet const &alphabet,
                       set<wchar_t> const &escaped_chars,
-                      queue<wstring> &blankqueue, vector<wstring> &numbers) const
+                      deque<wstring> &blankdeque, vector<wstring> &numbers) const
 {
   wstring result = L"";
 
@@ -582,10 +582,10 @@ State::filterFinalsTM(set<Node *> const &finals,
       if(fragmentos[i].size() >=2 && fragmentos[i].substr(fragmentos[i].size()-2) == L"(#")
       {
         wstring whitespace = L" ";
-        if(blankqueue.size() != 0)
+        if(blankdeque.size() != 0)
 	{
-          whitespace = blankqueue.front().substr(1);
-	  blankqueue.pop();
+          whitespace = blankdeque.front().substr(1);
+	  blankdeque.pop_front();
 	  whitespace = whitespace.substr(0, whitespace.size() - 1);
         }  
         fragmentos[i] = fragmentos[i].substr(0, fragmentos[i].size()-2) +
