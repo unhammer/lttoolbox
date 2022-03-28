@@ -132,12 +132,19 @@ Compiler::parse(string const &file, UString const &dir)
   // Minimize transducers: For each section, call transducer.minimize() in
   // its own thread. This is the major bottleneck of lt-comp and sections
   // are completely independent transducers.
-  std::thread minimisations[sections.size()];
+  const size_t core_count = std::thread::hardware_concurrency();
+  const size_t max_threads = core_count == 0 ? 1 : core_count;
+  std::future<void> minimisations[max_threads];
   size_t i = 0;
   for(std::pair<const UString, Transducer>& it : sections)
   {
     if(jobs) {
-      minimisations[i++] = std::thread([](Transducer &t) { t.minimize(); }, std::ref(it.second));
+      cerr << "minimising " << it.first << " " << i << endl;
+      std::packaged_task<void(Transducer &)> task([](Transducer &t) { t.minimize(); });
+      std::future<void> fut = task.get_future();
+      std::thread t(std::move(task), std::ref(it.second));
+      t.detach();
+      minimisations[i++] = std::move(fut);
     }
     else {
       it.second.minimize();
@@ -145,7 +152,7 @@ Compiler::parse(string const &file, UString const &dir)
   }
   if (jobs) {
     for (auto &thr : minimisations) {
-      thr.join();
+        thr.get();
     }
   }
 
@@ -153,6 +160,7 @@ Compiler::parse(string const &file, UString const &dir)
     exit(EXIT_FAILURE);
   }
 }
+
 
 bool
 Compiler::valid(UString const& dir) const

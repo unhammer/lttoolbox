@@ -24,6 +24,7 @@
 #include <lttoolbox/ustring.h>
 
 #include <thread>
+#include <future>
 #include <map>
 #include <string>
 #include <set>
